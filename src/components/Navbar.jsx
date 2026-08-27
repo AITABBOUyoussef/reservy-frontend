@@ -4,10 +4,10 @@ export default function Navbar() {
   const navigate = useNavigate();
   const token = localStorage.getItem("token");
   const user = JSON.parse(localStorage.getItem("user") || "null");
+const backendUrl = "http://127.0.0.1:8000/photos/";
 
   const handleLogout = () => {
-    // Msse7 les données mn localStorage
-    localStorage.removeItem("token");
+     localStorage.removeItem("token");
     localStorage.removeItem("user");
     navigate("/login");
   };
@@ -40,6 +40,11 @@ export default function Navbar() {
                 >
                   <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-xs">
                     {user?.name ? user.name.charAt(0).toUpperCase() : "U"}
+                  </div>
+                  <div>
+<img src={`${backendUrl}${user.avatar}`} alt="Avatar" className="w-16 h-16 rounded-full object-cover border"/>
+
+                    {/* <img src="{user.avatar_url}" alt="" className="w-16 h-16 rounded-full object-cover border border-emerald-500" /> */}
                   </div>
                   <span className="hidden sm:inline">{user?.name || "Mon Profil"}</span>
                 </Link>

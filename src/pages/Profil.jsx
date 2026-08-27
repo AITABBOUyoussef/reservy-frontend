@@ -3,12 +3,14 @@ import { useState } from "react";
 import axiosInstance from "../api/axios";
 
 export default function Profil() {
+  const user = JSON.parse(localStorage.getItem("user"));
+const backendUrl = "http://127.0.0.1:8000/photos/";
 
-    const [name , setName] = useState('');
-    const [email, setEmail] = useState('');
-    const [phone, setPhone] = useState('');
+    const [name , setName] = useState(user.name);
+    const [email, setEmail] = useState(user.email);
+    const [phone, setPhone] = useState(user.phone);
     const [avatar, setAvatar] = useState(null);
-    const [previewAvatar, setPreviewAvatar] = useState(null);
+    const [previewAvatar, setPreviewAvatar] = useState(`${backendUrl}${user.avatar}`);
     const [oldPassword, setOldPassword] = useState('');
     const [logoutDevices, setLogoutDevices] = useState('');
     const [password, setPassword] = useState('');
