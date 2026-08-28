@@ -5,6 +5,8 @@ import Dashboard from './pages/Dashboard';
 import Navbar from "./components/Navbar";
 import Register from "./pages/Register";
 import Profil from "./pages/Profil";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 
 function App() {
  
@@ -14,6 +16,8 @@ function App() {
     <Routes>
       <Route path="/login" element={<Login/>}/>
       <Route path="/register" element={<Register/>} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/reset-password" element={<ResetPassword/>} />
       <Route path="/dashboard" element={<Dashboard/>}/>
       <Route path="/profil" element={<Profil/>}/>
 
