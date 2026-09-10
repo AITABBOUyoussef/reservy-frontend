@@ -19,8 +19,10 @@ export default function Login() {
             });
             const token = response.data.token;
             const user = response.data.user;
+            const role = response.data.role;
 
             localStorage.setItem('token', token);
+            localStorage.setItem('role', role);
             localStorage.setItem('user', JSON.stringify(user));
             navigate('/dashboard');
         } catch (error) {

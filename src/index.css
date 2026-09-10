@@ -1,3 +1,8 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Optionnel: Ila bghiti t7yed scrollbar kifma kan f l'maquette */
+::-webkit-scrollbar {
+    display: none;
+}
