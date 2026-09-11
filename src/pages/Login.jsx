@@ -55,7 +55,7 @@ export default function Login() {
     });
 
     return (
-        <div className="min-h-screen flex bg-surface font-body-md text-body-md text-on-surface antialiased">
+        <div className=" flex mt-[60px] bg-surface font-body-md text-body-md text-on-surface antialiased">
             
             {/* L'Jiha d Lisser (Tswira w l'Glassmorphism) */}
             <div className="hidden lg:flex w-1/2 relative bg-cover bg-center" style={{ backgroundImage: "url('https://images.unsplash.com/photo-1498837167922-41c543210940?q=80&w=2070&auto=format&fit=crop')" }}>
@@ -67,7 +67,7 @@ export default function Login() {
             </div>
 
             {/* L'Jiha d Limen (Formulaire) */}
-            <div className="w-full lg:w-1/2 flex items-center justify-center p-8">
+            <div className="w-full  lg:w-1/2 flex items-center justify-center p-8">
                 <div className="w-full max-w-md bg-surface-white rounded-2xl shadow-sm p-8 sm:p-10 border border-surface-container">
                     
                     {/* Les Tabs */}

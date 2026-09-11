@@ -17,8 +17,7 @@ export default function Navbar() {
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-surface-white/95 backdrop-blur-xl shadow-[0_2px_16px_rgba(69,26,3,0.06)]">
-      {/* Zedt gap-8 hna bach nfar9o ga3 les blocs kbar */}
-      <div className="max-w-container-max mx-auto px-gutter-desktop h-20 flex items-center justify-between gap-8">
+      <div className="max-w-container-max mx-auto px-gutter-desktop h-20 flex items-center justify-between gap-space-lg">
         
         {/* Logo et Localisation */}
         <div className="flex items-center gap-space-lg shrink-0">
@@ -49,10 +48,9 @@ export default function Navbar() {
         </div>
 
         {/* Côté Droit : Groupement Nav + Actions */}
-        {/* Zedt gap-8 hna bach tb3ed navigation 3la l'boutounat */}
-        <div className="flex items-center gap-8 shrink-0">
+        <div className="flex items-center shrink-0">
           
-          <nav className="hidden lg:flex items-center gap-2">
+          <nav className="hidden lg:flex items-center gap-space-md">
             {(!token || userRole === 'client') && (
               <Link to="/etablissements" className="px-space-md py-space-xs transition-all bg-primary-container text-on-primary font-label-lg rounded-full shadow-[0_2px_8px_rgba(77,124,15,0.25)]">
                 Établissements
@@ -72,55 +70,50 @@ export default function Navbar() {
             )}
           </nav>
 
-          {/* Actions Utilisateur */}
-          <div className="flex items-center shrink-0">
-            
-            {(token && userRole === 'client') && (
-              <button aria-label="Panier d'achats" className="relative flex items-center justify-center w-11 h-11 rounded-full bg-surface-card hover:bg-surface-container text-primary-container transition-colors" type="button">
-                <span className="material-symbols-outlined text-[24px]">shopping_bag</span>
-                <span className="absolute -top-1 -right-1 bg-secondary text-on-secondary font-label-sm text-label-sm w-5 h-5 rounded-full flex items-center justify-center font-bold">3</span>
-              </button>
-            )}
+          {(token && userRole === 'client') && (
+            <button aria-label="Panier d'achats" className="relative flex items-center justify-center w-11 h-11 rounded-full bg-surface-card hover:bg-surface-container text-primary-container transition-colors ml-space-md" type="button">
+              <span className="material-symbols-outlined text-[24px]">shopping_bag</span>
+              <span className="absolute -top-1 -right-1 bg-secondary text-on-secondary font-label-sm text-label-sm w-5 h-5 rounded-full flex items-center justify-center font-bold">3</span>
+            </button>
+          )}
 
-            {/* HNA FIN BEDDELT L'MASAFA BZAF */}
-            {/* gap-8 = far9 kbir bin Connexion w Inscription | pl-8 = far9 kbir 3la liser d l'kht | ml-6 = far9 kbir 3la limen d l'kht */}
-            <div className="flex items-center gap-8 pl-8 border-l-2 border-surface-container ml-6">
-              {token ? (
-                <>
-                  <Link to="/profil" className="flex items-center gap-3 text-on-surface hover:text-primary transition-colors">
-                    {user?.avatar ? (
-                      <img src={`${backendUrl}${user.avatar}`} alt="Avatar" className="w-10 h-10 rounded-full object-cover border-2 border-primary-container shadow-sm"/>
-                    ) : (
-                      <div className="w-10 h-10 rounded-full bg-primary-container text-on-primary flex items-center justify-center font-bold text-sm shadow-sm">
-                        {user?.name ? user.name.charAt(0).toUpperCase() : "U"}
-                      </div>
-                    )}
-                    <div className="hidden sm:flex flex-col">
-                      <span className="font-label-md text-label-md font-bold">{user?.name || "Mon Profil"}</span>
-                      <span className="text-[10px] uppercase font-bold text-on-surface-variant tracking-wider">
-                        {userRole}
-                      </span>
+          {/* HNA FIN 7ELLINA LMOCHKIL B LES CLASSES DYALK (gap-space-xl, pl-space-lg, ml-space-lg) */}
+          <div className="flex items-center pl-space-lg border-l border-surface-container ml-space-lg shrink-0">
+            {token ? (
+              <div className="flex items-center gap-space-lg">
+                <Link to="/profil" className="flex items-center gap-3 text-on-surface hover:text-primary transition-colors">
+                  {user?.avatar ? (
+                    <img src={`${backendUrl}${user.avatar}`} alt="Avatar" className="w-10 h-10 rounded-full object-cover border-2 border-primary-container shadow-sm"/>
+                  ) : (
+                    <div className="w-10 h-10 rounded-full bg-primary-container text-on-primary flex items-center justify-center font-bold text-sm shadow-sm">
+                      {user?.name ? user.name.charAt(0).toUpperCase() : "U"}
                     </div>
-                  </Link>
+                  )}
+                  <div className="hidden sm:flex flex-col">
+                    <span className="font-label-md text-label-md font-bold">{user?.name || "Mon Profil"}</span>
+                    <span className="text-[10px] uppercase font-bold text-on-surface-variant tracking-wider">
+                      {userRole}
+                    </span>
+                  </div>
+                </Link>
 
-                  <button onClick={handleLogout} className="bg-error-container text-error hover:bg-error hover:text-on-error font-label-sm text-label-sm px-4 py-2.5 rounded-full transition-all duration-200 flex items-center gap-2 shadow-sm ml-4">
-                    <span className="material-symbols-outlined text-[18px]">logout</span>
-                    <span className="hidden sm:inline">Déconnexion</span>
-                  </button>
-                </>
-              ) : (
-                <>
-                  <Link to="/login" className="text-base font-bold text-on-surface hover:text-primary transition-colors">
-                    Connexion
-                  </Link>
-                  <Link to="/register" className="bg-primary-container hover:bg-primary text-on-primary text-sm font-bold px-6 py-3 rounded-full shadow-sm hover:shadow-md transition-all duration-200">
-                    Inscription
-                  </Link>
-                </>
-              )}
-            </div>
-
+                <button onClick={handleLogout} className="bg-error-container text-error hover:bg-error hover:text-on-error font-label-sm text-label-sm px-space-md py-space-xs rounded-full transition-all duration-200 flex items-center gap-1 shadow-sm">
+                  <span className="material-symbols-outlined text-[18px]">logout</span>
+                  <span className="hidden sm:inline">Déconnexion</span>
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-space-xl">
+                <Link to="/login" className="font-label-lg text-label-lg font-bold text-on-surface hover:text-primary transition-colors">
+                  Connexion
+                </Link>
+                <Link to="/register" className="bg-primary-container hover:bg-primary text-on-primary font-label-lg text-label-lg font-bold px-space-xl py-space-xs rounded-full shadow-sm hover:shadow-md transition-all duration-200">
+                  Inscription
+                </Link>
+              </div>
+            )}
           </div>
+
         </div>
       </div>
     </header>
