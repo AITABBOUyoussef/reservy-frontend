@@ -24,6 +24,14 @@ export default function Login() {
             localStorage.setItem('token', token);
             localStorage.setItem('role', role);
             localStorage.setItem('user', JSON.stringify(user));
+           if(token && role === 'gerant'){
+            navigate("/dashboardGarant");
+            return;
+           }
+             if(token && role === 'admin'){
+            navigate("/dashboardAdmin");
+            return;
+           }
             navigate('/dashboard');
         } catch (error) {
             if (error.response) {
@@ -48,7 +56,7 @@ export default function Login() {
                 window.location.href = '/profil';
 
             } catch (error) {
-                console.error("Erreur dyal connexion m3a l'backend:", error);
+                console.error("Erreur connexion sur lbackend:", error);
             }
         },
         onError: errorResponse => console.log("Erreur Google:", errorResponse),

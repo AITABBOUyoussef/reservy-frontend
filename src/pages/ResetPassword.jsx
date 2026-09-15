@@ -29,10 +29,10 @@ export default function ResetPassword() {
                 password_confirmation: passwordConfirmation
             });
 
-            // Mli kaynj7 l'changement
+          
             setMessage(response.data.message);
             
-            // Ntsnaw 3 tawanin w ndiw l'user l'login
+       
             setTimeout(() => {
                 navigate('/login');
             }, 3000);

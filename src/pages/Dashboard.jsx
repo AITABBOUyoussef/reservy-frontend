@@ -1,12 +1,27 @@
 import { useState, useEffect } from 'react';
 import Navbar from '../components/Navbar';
+import { useNavigate } from 'react-router-dom';
 import axiosInstance from "../api/axios";
 
 export default function Dashboard() {
   const [etablissements, setEtablissements] = useState([]);
   const [loading, setLoading] = useState(true);
   const [mode, setMode] = useState('delivery'); // Switch Livraison / Réservation
+const navigate = useNavigate();
 
+  const token = localStorage.getItem("token") || null;
+
+const handNav = (id) => {
+    navigate(`/etablissment/${id}`); 
+};
+const handGarant = () => {
+  if(!token){
+    
+    navigate("/login");
+    return;
+  }
+  navigate("/addEtablissment")
+}
   const IMAGE_BASE_URL = "http://127.0.0.1:8000/photos/";
 
   useEffect(() => {
@@ -94,15 +109,16 @@ export default function Dashboard() {
                 </span>
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6" >
                 {etablissements.length > 0 ? (
                   etablissements.map((etab) => (
                     <div
+                    onClick={()=>handNav(etab.id)}
                       key={etab.id}
                       className="group cursor-pointer flex flex-col gap-2 transition-transform duration-200 hover:-translate-y-1"
                     >
                       {/* Image Container */}
-                      <div className="relative w-full aspect-[16/9] rounded-2xl overflow-hidden bg-gray-200 shadow-sm">
+                      <div  className="relative w-full aspect-[16/9] rounded-2xl overflow-hidden bg-gray-200 shadow-sm">
                         <img
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                           src={`${IMAGE_BASE_URL}${etab.nom_image}`}
@@ -165,6 +181,78 @@ export default function Dashboard() {
 
         </div>
       </main>
+      {/* PARTENARIAT & GERANT SECTION */}
+<section className="bg-teal-50 w-full py-16 px-6 mt-12 border-t border-teal-100">
+  <div className="max-w-6xl mx-auto flex flex-col items-center">
+    
+    {/* أيقونة المصافحة (Handshake) */}
+    <div className="bg-teal-600 text-white p-3 rounded-full mb-4 shadow-md">
+      <span className="material-symbols-outlined text-4xl">handshake</span>
+    </div>
+    
+    <h2 className="text-3xl md:text-4xl font-extrabold text-gray-900 mb-12 text-center">
+      Travaillons ensemble
+    </h2>
+
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-10 md:gap-6 w-full">
+      
+      {/* Card 1: Livreur */}
+      <div className="flex flex-col items-center text-center group">
+        <div className="w-48 h-48 rounded-[40px] rounded-tl-[80px] rounded-br-[80px] bg-teal-600 overflow-hidden mb-6 p-1 transition-transform duration-300 group-hover:scale-105">
+          <img 
+            src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?q=80&w=400&auto=format&fit=crop" 
+            alt="Livreur" 
+            className="w-full h-full object-cover rounded-[36px] rounded-tl-[76px] rounded-br-[76px]"
+          />
+        </div>
+        <h3 className="text-xl font-extrabold text-gray-900 mb-3">Devenir Livreur</h3>
+        <p className="text-sm text-gray-600 mb-6 px-4">
+          Profitez de la flexibilité, de la liberté et de revenus compétitifs en livrant avec notre plateforme.
+        </p>
+        <button className="bg-teal-700 hover:bg-teal-800 text-white font-bold py-2.5 px-8 rounded-full transition-colors">
+          S'inscrire ici
+        </button>
+      </div>
+
+      {/* Card 2: Ajouter un établissement (Gerant) */}
+      <div className="flex flex-col items-center text-center group">
+        <div className="w-48 h-48 rounded-[40px] rounded-tr-[80px] rounded-bl-[80px] bg-teal-600 overflow-hidden mb-6 p-1 transition-transform duration-300 group-hover:scale-105">
+          <img 
+            src="https://images.unsplash.com/photo-1556157382-97eda2d62296?q=80&w=400&auto=format&fit=crop" 
+            alt="Gérant de restaurant" 
+            className="w-full h-full object-cover rounded-[36px] rounded-tr-[76px] rounded-bl-[76px]"
+          />
+        </div>
+        <h3 className="text-xl font-extrabold text-gray-900 mb-3">Inscrire votre restaurant</h3>
+        <p className="text-sm text-gray-600 mb-6 px-4">
+          Développez votre activité ! Notre technologie peut vous aider à booster vos ventes et attirer de nouveaux clients.
+        </p>
+        <button onClick={handGarant} className="bg-teal-700 hover:bg-teal-800 text-white font-bold py-2.5 px-8 rounded-full transition-colors">
+          S'inscrire ici
+        </button>
+      </div>
+
+      {/* Card 3: Carrières */}
+      <div className="flex flex-col items-center text-center group">
+        <div className="w-48 h-48 rounded-[40px] rounded-tl-[80px] rounded-br-[80px] bg-teal-600 overflow-hidden mb-6 p-1 transition-transform duration-300 group-hover:scale-105">
+          <img 
+            src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?q=80&w=400&auto=format&fit=crop" 
+            alt="Équipe" 
+            className="w-full h-full object-cover rounded-[36px] rounded-tl-[76px] rounded-br-[76px]"
+          />
+        </div>
+        <h3 className="text-xl font-extrabold text-gray-900 mb-3">Carrières</h3>
+        <p className="text-sm text-gray-600 mb-6 px-4">
+          Prêt pour un nouveau défi ? Si vous êtes ambitieux et aimez le travail d'équipe, nous voulons vous entendre !
+        </p>
+        <button className="bg-teal-700 hover:bg-teal-800 text-white font-bold py-2.5 px-8 rounded-full transition-colors">
+          Postuler ici
+        </button>
+      </div>
+
+    </div>
+  </div>
+</section>
     </div>
   );
 }
