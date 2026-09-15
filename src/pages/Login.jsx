@@ -24,6 +24,14 @@ export default function Login() {
             localStorage.setItem('token', token);
             localStorage.setItem('role', role);
             localStorage.setItem('user', JSON.stringify(user));
+           if(token && role === 'gerant'){
+            navigate("/dashboardGarant");
+            return;
+           }
+             if(token && role === 'admin'){
+            navigate("/dashboardAdmin");
+            return;
+           }
             navigate('/dashboard');
         } catch (error) {
             if (error.response) {

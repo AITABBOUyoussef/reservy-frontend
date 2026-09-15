@@ -9,6 +9,8 @@ import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import Etablissment from "./pages/Etablissment";
 import AddEtablissment from "./pages/AddEtablissment";
+import DashboardGarant from "./pages/DashboardGarant";
+import DashboardAdmin from "./pages/DashboardAdmin";
 
 function App() {
  
@@ -21,6 +23,8 @@ function App() {
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword/>} />
       <Route path="/dashboard" element={<Dashboard/>}/>
+      <Route path="/dashboardGarant" element={<DashboardGarant/>}/>
+      <Route path="/dashboardAdmin" element={<DashboardAdmin/>}/>
       <Route path="/addEtablissment" element={<AddEtablissment/>}/>
       <Route path="/etablissment/:id" element={<Etablissment/>}/>
       <Route path="/profil" element={<Profil/>}/>
