@@ -1,12 +1,16 @@
 import { useState, useEffect } from 'react';
 import Navbar from '../components/Navbar';
+import { useNavigate } from 'react-router-dom';
 import axiosInstance from "../api/axios";
 
 export default function Dashboard() {
   const [etablissements, setEtablissements] = useState([]);
   const [loading, setLoading] = useState(true);
   const [mode, setMode] = useState('delivery'); // Switch Livraison / Réservation
-
+const navigate = useNavigate();
+const handNav = (id) => {
+    navigate(`/etablissment/${id}`); 
+};
   const IMAGE_BASE_URL = "http://127.0.0.1:8000/photos/";
 
   useEffect(() => {
@@ -94,15 +98,16 @@ export default function Dashboard() {
                 </span>
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6" >
                 {etablissements.length > 0 ? (
                   etablissements.map((etab) => (
                     <div
+                    onClick={()=>handNav(etab.id)}
                       key={etab.id}
                       className="group cursor-pointer flex flex-col gap-2 transition-transform duration-200 hover:-translate-y-1"
                     >
                       {/* Image Container */}
-                      <div className="relative w-full aspect-[16/9] rounded-2xl overflow-hidden bg-gray-200 shadow-sm">
+                      <div  className="relative w-full aspect-[16/9] rounded-2xl overflow-hidden bg-gray-200 shadow-sm">
                         <img
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                           src={`${IMAGE_BASE_URL}${etab.nom_image}`}

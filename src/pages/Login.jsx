@@ -48,7 +48,7 @@ export default function Login() {
                 window.location.href = '/profil';
 
             } catch (error) {
-                console.error("Erreur dyal connexion m3a l'backend:", error);
+                console.error("Erreur connexion sur lbackend:", error);
             }
         },
         onError: errorResponse => console.log("Erreur Google:", errorResponse),

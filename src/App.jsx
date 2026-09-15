@@ -7,6 +7,7 @@ import Register from "./pages/Register";
 import Profil from "./pages/Profil";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
+import Etablissment from "./pages/Etablissment";
 
 function App() {
  
@@ -19,6 +20,7 @@ function App() {
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword/>} />
       <Route path="/" element={<Dashboard/>}/>
+      <Route path="/etablissment/:id" element={<Etablissment/>}/>
       <Route path="/profil" element={<Profil/>}/>
 
     </Routes>
