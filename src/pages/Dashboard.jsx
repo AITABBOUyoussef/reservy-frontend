@@ -8,10 +8,9 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [mode, setMode] = useState('delivery'); // Switch Livraison / Réservation
 const navigate = useNavigate();
-const handNav = (id) =>{
-    navigate(`/Etablissment/${id}`);
+const handNav = (id) => {
+    navigate(`/etablissment/${id}`); 
 };
-
   const IMAGE_BASE_URL = "http://127.0.0.1:8000/photos/";
 
   useEffect(() => {
