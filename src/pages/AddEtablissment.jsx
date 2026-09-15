@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axiosInstance from "../api/axios";
-import Navbar from "../components/Navbar"; // يلا بغيتي تزيد النافبار الفوق
+import Navbar from "../components/Navbar"; 
 
 export default function AddEtablissment() {
   const user = JSON.parse(localStorage.getItem("user") || "null");
-  const UserID = user?.id;
+ 
 
   const [nom, setNom] = useState('');
   const [description, setDescription] = useState('');
@@ -14,7 +14,7 @@ export default function AddEtablissment() {
   const [telephone, setTelephone] = useState('');
   
   const [errorMessage, setErrorMessage] = useState('');
-  const [isLoading, setIsLoading] = useState(false); // باش نديرو لودينغ فالبوطون
+  const [isLoading, setIsLoading] = useState(false); 
   
   const navigate = useNavigate();
 
@@ -23,9 +23,7 @@ export default function AddEtablissment() {
     setErrorMessage('');
     setIsLoading(true);
 
-    try {
-      // إرسال البيانات كـ JSON عادي تماماً بحال Postman
-      const response = await axiosInstance.post('/CreeEtablissement', {
+    try {  const response = await axiosInstance.post('/CreeEtablissement', {
        
         nom: nom,
         description: description,
@@ -34,7 +32,7 @@ export default function AddEtablissment() {
         telephone: telephone
       });
 
-      // ملي كيدوز داكشي مزيان، كنصيفطوه للداشبورد ديالو
+     
       navigate('/dashboardGarant'); 
       
     } catch (error) {
