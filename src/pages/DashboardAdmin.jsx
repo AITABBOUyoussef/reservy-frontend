@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import axiosInstance from "../api/axios";
 import { useNavigate } from 'react-router-dom';
 import AllEtablissment from './AllEtablissment';
+import AddEtablissment from './AddEtablissment';
 export default function DashboardAdmin() {
 
   const [activeTab, setActiveTab] = useState('attente');
@@ -63,7 +64,7 @@ export default function DashboardAdmin() {
       <main className="flex-1 overflow-y-auto p-8 bg-gray-50/50">
         {activeTab === 'attente' && <DemandesEnAttente />}
         {activeTab === 'tous' && <AllEtablissment />}
-        {activeTab === 'ajouter' && <AjouterEtablissement />}
+        {activeTab === 'ajouter' && <AddEtablissment />}
       </main>
 
     </div>
