@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import axiosInstance from "../api/axios";
 import { useNavigate } from 'react-router-dom';
+import AllEtablissment from './AllEtablissment';
 export default function DashboardAdmin() {
 
   const [activeTab, setActiveTab] = useState('attente');
@@ -61,7 +62,7 @@ export default function DashboardAdmin() {
      
       <main className="flex-1 overflow-y-auto p-8 bg-gray-50/50">
         {activeTab === 'attente' && <DemandesEnAttente />}
-        {activeTab === 'tous' && <TousLesEtablissements />}
+        {activeTab === 'tous' && <AllEtablissment />}
         {activeTab === 'ajouter' && <AjouterEtablissement />}
       </main>
 
@@ -75,7 +76,7 @@ function DemandesEnAttente() {
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(null);
 
-  // جلب البيانات
+  
   const fetchAttentes = async () => {
     try {
       const response = await axiosInstance.get('/EtablissementAttente');
@@ -195,20 +196,6 @@ function DemandesEnAttente() {
           <p className="text-gray-500 mt-2 max-w-sm">Il n'y a aucune demande d'établissement en attente pour le moment.</p>
         </div>
       )}
-    </div>
-  );
-}
-
-
-function TousLesEtablissements() {
-  return (
-    <div className="max-w-6xl mx-auto">
-      <h2 className="text-3xl font-extrabold text-gray-900 mb-8">Tous les établissements</h2>
-      <div className="bg-white rounded-3xl shadow-sm border border-gray-200 p-12 text-center">
-        <span className="material-symbols-outlined text-gray-300 text-6xl mb-4">construction</span>
-        <h3 className="text-xl font-bold text-gray-700">En cours de développement</h3>
-        <p className="text-gray-500 mt-2">La liste de tous les établissements s'affichera ici.</p>
-      </div>
     </div>
   );
 }
