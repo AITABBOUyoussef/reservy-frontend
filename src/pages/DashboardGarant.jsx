@@ -1,35 +1,206 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axiosInstance from '../api/axios';
 import Navbar from '../components/Navbar';
 
 export default function DashboardGarant() {
   const navigate = useNavigate();
-  // غنخزنو المطعم الأول مباشرة هنا
   const [etablissement, setEtablissement] = useState(null);
   const [loading, setLoading] = useState(true);
 
   const IMAGE_BASE_URL = "http://127.0.0.1:8000/photos/";
 
-  useEffect(() => {
-    const fetchDetails = async () => {
-      try {
-        const response = await axiosInstance.get('/MonEtablissment');
-        
-        // 💡 هنا السر: كنفحصو واش كاين Array وناخدو المطعم الأول [0]
-        if (response.data && response.data.etablissements && response.data.etablissements.length > 0) {
-          setEtablissement(response.data.etablissements[0]);
-        }
-      } catch (error) {
-        console.error("Erreur lors de la récupération des détails:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
+  // ================= ETATS POUR LES MODALS =================
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editData, setEditData] = useState({});
 
-    fetchDetails();
+  const [showAddTableModal, setShowAddTableModal] = useState(false);
+  const [newTable, setNewTable] = useState({ numero: '', capacite: '' });
+
+  const [showAddImageModal, setShowAddImageModal] = useState(false);
+  // 7yedna est_principale mn state hit wlat dima 0 f l'ajout
+  const [newImage, setNewImage] = useState({ file: null });
+
+  // ================= FETCH DETAILS =================
+  const fetchDetails = useCallback(async () => {
+    setLoading(true);
+    try {
+      const response = await axiosInstance.get('/MonEtablissment');
+      if (response.data && response.data.etablissements && response.data.etablissements.length > 0) {
+        setEtablissement(response.data.etablissements[0]);
+      } else {
+        setEtablissement(null);
+      }
+    } catch (error) {
+      console.error("Erreur lors de la récupération des détails:", error);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
+  useEffect(() => {
+    fetchDetails();
+  }, [fetchDetails]);
+
+  // ================= FONCTIONNALITÉS =================
+
+  // 1. Modifier l'établissement
+  const handleEditSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      await axiosInstance.post('/EditEtablissement', {
+        IdEtablissement: etablissement.id,
+        gerant_id: etablissement.gerant_id,
+        nom: editData.nom,
+        description: editData.description,
+        adresse: editData.adresse,
+        ville: editData.ville,
+        telephone: editData.telephone
+      });
+      setEtablissement({ ...etablissement, ...editData });
+      setShowEditModal(false);
+      alert("Etablissement modifié avec succès !");
+    } catch (error) {
+      console.error("Erreur de modification:", error);
+      alert("Erreur lors de la modification.");
+    }
+  };
+
+  // 2. Supprimer l'établissement
+  const supprimerEtablissement = async () => {
+    if (!window.confirm("Voulez-vous vraiment supprimer cet établissement ?")) return;
+    try {
+      await axiosInstance.post('/DestroyEtablissement', {
+        IdEtablissement: etablissement.id,
+        gerant_id: etablissement.gerant_id
+      });
+      setEtablissement(null);
+      alert("Etablissement supprimé.");
+    } catch (error) {
+      console.error("Erreur suppression etablissement:", error);
+      alert("Erreur lors de la suppression.");
+    }
+  };
+
+  // 3. Ajouter une table
+ const handleAddTableSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      await axiosInstance.post('/AddTabl', {
+        etablissement_id: etablissement.id,
+        numero: newTable.numero,
+        capacite: parseInt(newTable.capacite)
+      });
+      fetchDetails(); 
+      setShowAddTableModal(false);
+      setNewTable({ numero: '', capacite: '' });
+      alert("Table ajoutée b naja7!");
+      
+    } catch (error) {
+      // 🚨 Hna fin zedna l'affichage dyal l'erreur s7i7a dyal Laravel
+      if (error.response && error.response.status === 422) {
+        // Hada ghadi yjbed l'message "Had ra9m dyal la table deja kayn..."
+        const errorMessages = error.response.data.errors;
+        if (errorMessages && errorMessages.numero) {
+          alert(errorMessages.numero[0]); // Ki2afichi l'erreur dyal ra9m
+        } else {
+          alert(error.response.data.message || "Kayn mochkil f les données li sifti.");
+        }
+      } else {
+        console.error("Erreur ajout table:", error);
+        alert("Erreur f serveur ola connexion.");
+      }
+    }
+  };
+
+  // 4. Supprimer une table
+  const supprimerTable = async (tableId) => {
+    if (!window.confirm("Voulez-vous supprimer cette table ?")) return;
+    try {
+      await axiosInstance.post('/DaleteTabl', {
+        IdEtablissement: etablissement.id,
+        IdTabl: tableId,
+        gerant_id: etablissement.gerant_id
+      });
+      setEtablissement(prev => ({
+        ...prev,
+        tables: prev.tables.filter(table => table.id !== tableId)
+      }));
+    } catch (error) {
+      console.error("Erreur de suppression:", error);
+      alert("Erreur lors de la suppression de la table.");
+    }
+  };
+
+  // 5. Ajouter une image (Modifié : Dima 0 f l'ajout)
+  const handleAddImageSubmit = async (e) => {
+    e.preventDefault();
+    if (!newImage.file) return alert("Veuillez sélectionner une image !");
+    
+    const formData = new FormData();
+    formData.append('nom_image', newImage.file);
+    formData.append('est_principale', "0"); // <-- Dima tsift 0 f l'ajout
+    formData.append('etablissement_id', etablissement.id);
+
+    try {
+      await axiosInstance.post('/AddImage', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      fetchDetails(); 
+      setShowAddImageModal(false);
+      setNewImage({ file: null });
+    } catch (error) {
+      console.error("Erreur ajout image:", error);
+      alert("Erreur lors de l'ajout de l'image.");
+    }
+  };
+
+  // 6. Supprimer une image
+  const supprimerImage = async (imageId) => {
+    if (!window.confirm("Voulez-vous supprimer cette image ?")) return;
+    try {
+      await axiosInstance.post('/DaleteImage', {
+        IdEtablissement: etablissement.id,
+        IdImage: imageId,
+        gerant_id: etablissement.gerant_id
+      });
+      setEtablissement(prev => ({
+        ...prev,
+        images: prev.images.filter(img => img.id !== imageId)
+      }));
+    } catch (error) {
+      console.error("Erreur suppression image:", error);
+      alert("Erreur lors de la suppression de l'image.");
+    }
+  };
+
+  // 7. Rendre une image Principale (Cover)
+  const setMainImage = async (imageId) => {
+    if (!window.confirm("Voulez-vous définir cette image comme Cover principale ?")) return;
+
+    try {
+      await axiosInstance.post('/EditImage', {
+        IdEtablissement: etablissement.id,
+        IdImage: imageId,
+        gerant_id: etablissement.gerant_id
+      });
+
+      setEtablissement(prev => ({
+        ...prev,
+        images: prev.images.map(img => ({
+          ...img,
+          est_principale: img.id === imageId ? 1 : 0
+        }))
+      }));
+
+    } catch (error) {
+      console.error("Erreur mise à jour image principale:", error);
+      alert("Erreur lors du changement de l'image principale.");
+    }
+  };
+
+
+  // ================= RENDU =================
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-screen bg-gray-50">
@@ -38,7 +209,6 @@ export default function DashboardGarant() {
     );
   }
 
-  // 🔴 يلا الجيرو عاد تسجل وماعندو حتى مطعم
   if (!etablissement) {
     return (
       <div className="bg-gray-50 min-h-screen font-sans text-gray-900 pb-12">
@@ -61,20 +231,19 @@ export default function DashboardGarant() {
     );
   }
 
-  // 🟢 تحديد الصورة الرئيسية للكوفر
   const mainImage = etablissement.images?.find(img => img.est_principale === 1) || etablissement.images?.[0];
 
   return (
-    <div className="bg-gray-50 min-h-screen pb-12 font-sans text-gray-900">
+    <div className="bg-gray-50 min-h-screen pb-12 font-sans text-gray-900 relative">
       <Navbar />
       
-      {/* ================= HEADER & COVER ================= */}
+      {/* HEADER & COVER */}
       <div className="relative w-full h-72 bg-teal-900 mt-[64px]">
         {mainImage ? (
           <img 
             src={`${IMAGE_BASE_URL}${mainImage.nom_image}`} 
             alt="Cover" 
-            className="w-full h-full object-cover opacity-50"
+            className="w-full h-full object-cover opacity-50 transition-all duration-500"
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center opacity-30">
@@ -85,7 +254,6 @@ export default function DashboardGarant() {
         <div className="absolute inset-0 bg-gradient-to-t from-gray-900/90 via-gray-900/40 to-transparent flex items-end">
           <div className="max-w-6xl mx-auto px-6 pb-8 w-full flex justify-between items-end">
             <div className="text-white">
-              {/* شارة الحالة (Statut) */}
               <span className={`text-xs font-bold px-3 py-1.5 rounded shadow-sm flex items-center gap-1 w-max mb-3 uppercase ${etablissement.statut === 'acceptee' ? 'bg-green-500' : 'bg-amber-500'}`}>
                 <span className="material-symbols-outlined text-[14px]">
                   {etablissement.statut === 'acceptee' ? 'check_circle' : 'pending'}
@@ -100,28 +268,45 @@ export default function DashboardGarant() {
               </p>
             </div>
             
-            <button className="bg-white text-gray-900 px-5 py-2.5 rounded-xl font-bold flex items-center gap-2 hover:bg-gray-100 shadow-lg transition-all">
-              <span className="material-symbols-outlined text-[20px]">visibility</span>
-              Aperçu
-            </button>
+            <div className="flex gap-2">
+              <button 
+                onClick={supprimerEtablissement}
+                className="bg-red-600 text-white px-4 py-2.5 rounded-xl font-bold flex items-center gap-2 hover:bg-red-700 shadow-lg transition-all"
+              >
+                <span className="material-symbols-outlined text-[20px]">delete</span>
+                Supprimer l'établissement
+              </button>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* ================= MAIN DASHBOARD GRID ================= */}
+      {/* MAIN DASHBOARD GRID */}
       <div className="max-w-6xl mx-auto px-6 mt-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
         
-        {/* COLONNE GAUCHE (Infos, Menu, Avis) */}
+        {/* COLONNE GAUCHE */}
         <div className="lg:col-span-2 space-y-8">
           
-          {/* 1. Informations de base */}
+          {/* Informations */}
           <section className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-bold flex items-center gap-2">
                 <span className="material-symbols-outlined text-teal-600">info</span>
                 Informations
               </h2>
-              <button className="text-teal-600 bg-teal-50 px-3 py-1.5 rounded-lg text-sm font-bold flex items-center gap-1 hover:bg-teal-100 transition-colors">
+              <button 
+                onClick={() => {
+                  setEditData({
+                    nom: etablissement.nom,
+                    description: etablissement.description,
+                    adresse: etablissement.adresse,
+                    ville: etablissement.ville,
+                    telephone: etablissement.telephone
+                  });
+                  setShowEditModal(true);
+                }}
+                className="text-teal-600 bg-teal-50 px-3 py-1.5 rounded-lg text-sm font-bold flex items-center gap-1 hover:bg-teal-100 transition-colors"
+              >
                 <span className="material-symbols-outlined text-[18px]">edit</span>
                 Modifier
               </button>
@@ -139,7 +324,7 @@ export default function DashboardGarant() {
             </div>
           </section>
 
-          {/* 2. Menu (Produits) */}
+          {/* Menu */}
           <section className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-xl font-bold flex items-center gap-2">
@@ -179,10 +364,6 @@ export default function DashboardGarant() {
                       </div>
                       <p className="text-xs text-gray-500 mt-2 line-clamp-2">{prod.description}</p>
                     </div>
-                    <div className="flex flex-col gap-2 justify-center border-l pl-3 border-gray-200">
-                      <button className="text-gray-400 hover:text-teal-600 bg-white p-1.5 rounded-md shadow-sm border border-gray-100"><span className="material-symbols-outlined text-[18px]">edit</span></button>
-                      <button className="text-gray-400 hover:text-red-600 bg-white p-1.5 rounded-md shadow-sm border border-gray-100"><span className="material-symbols-outlined text-[18px]">delete</span></button>
-                    </div>
                   </div>
                 ))
               ) : (
@@ -191,7 +372,7 @@ export default function DashboardGarant() {
             </div>
           </section>
 
-          {/* 3. Avis Clients */}
+          {/* Avis Clients */}
           <section className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
             <h2 className="text-xl font-bold flex items-center gap-2 mb-6">
               <span className="material-symbols-outlined text-amber-500">star</span>
@@ -218,17 +399,20 @@ export default function DashboardGarant() {
 
         </div>
 
-        {/* COLONNE DROITE (Galerie, Tables) */}
+        {/* COLONNE DROITE */}
         <div className="space-y-8">
           
-          {/* 4. Galerie Photos */}
+          {/* Galerie Photos */}
           <section className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-lg font-bold flex items-center gap-2">
                 <span className="material-symbols-outlined text-teal-600">photo_library</span>
                 Galerie
               </h2>
-              <button className="text-teal-600 bg-teal-50 p-2 rounded-lg hover:bg-teal-100 transition-colors">
+              <button 
+                onClick={() => setShowAddImageModal(true)}
+                className="text-teal-600 bg-teal-50 p-2 rounded-lg hover:bg-teal-100 transition-colors"
+              >
                 <span className="material-symbols-outlined text-[20px]">add_a_photo</span>
               </button>
             </div>
@@ -236,12 +420,39 @@ export default function DashboardGarant() {
             {etablissement.images?.length > 0 ? (
               <div className="grid grid-cols-2 gap-3">
                 {etablissement.images.map(img => (
-                  <div key={img.id} className="relative aspect-square rounded-xl overflow-hidden group shadow-sm border border-gray-100">
+                  <div key={img.id} className="relative aspect-square rounded-xl overflow-hidden group shadow-sm border border-gray-100 bg-gray-100">
                     <img src={`${IMAGE_BASE_URL}${img.nom_image}`} alt="gallery" className="w-full h-full object-cover" />
+                    
+                    {/* Hover Overlay */}
                     <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex justify-center items-center gap-2">
-                      <button className="text-white hover:text-red-400 bg-black/40 p-2 rounded-full backdrop-blur-sm"><span className="material-symbols-outlined text-[18px]">delete</span></button>
+                      
+                      {/* Bouton Nejma (Cover) */}
+                      {img.est_principale !== 1 && (
+                        <button 
+                          onClick={() => setMainImage(img.id)}
+                          title="Définir comme Cover"
+                          className="text-white hover:text-amber-400 bg-black/40 p-2 rounded-full backdrop-blur-sm transition-colors"
+                        >
+                          <span className="material-symbols-outlined text-[18px]">star</span>
+                        </button>
+                      )}
+
+                      {/* Bouton Delete */}
+                      <button 
+                        onClick={() => supprimerImage(img.id)}
+                        title="Supprimer l'image"
+                        className="text-white hover:text-red-400 bg-black/40 p-2 rounded-full backdrop-blur-sm transition-colors"
+                      >
+                        <span className="material-symbols-outlined text-[18px]">delete</span>
+                      </button>
                     </div>
-                    {img.est_principale === 1 && <span className="absolute bottom-2 left-2 bg-teal-600 text-white text-[9px] font-bold px-2 py-0.5 rounded shadow-md uppercase">Cover</span>}
+
+                    {/* Badge Cover */}
+                    {img.est_principale === 1 && (
+                      <span className="absolute bottom-2 left-2 bg-amber-500 text-white text-[9px] font-bold px-2 py-0.5 rounded shadow-md uppercase flex items-center gap-1">
+                        <span className="material-symbols-outlined text-[10px]">star</span> Cover
+                      </span>
+                    )}
                   </div>
                 ))}
               </div>
@@ -250,14 +461,17 @@ export default function DashboardGarant() {
             )}
           </section>
 
-          {/* 5. Tables */}
+          {/* Tables */}
           <section className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-lg font-bold flex items-center gap-2">
                 <span className="material-symbols-outlined text-teal-600">table_restaurant</span>
                 Tables ({etablissement.tables?.length || 0})
               </h2>
-              <button className="text-teal-600 bg-teal-50 p-2 rounded-lg hover:bg-teal-100 transition-colors">
+              <button 
+                onClick={() => setShowAddTableModal(true)}
+                className="text-teal-600 bg-teal-50 p-2 rounded-lg hover:bg-teal-100 transition-colors"
+              >
                 <span className="material-symbols-outlined text-[20px]">add</span>
               </button>
             </div>
@@ -272,7 +486,12 @@ export default function DashboardGarant() {
                       </div>
                       <span className="text-sm font-bold text-gray-600">{table.capacite} places</span>
                     </div>
-                    <button className="text-gray-400 hover:text-red-500 bg-white p-1.5 rounded-md shadow-sm border border-gray-100"><span className="material-symbols-outlined text-[18px]">delete</span></button>
+                    <button 
+                      onClick={() => supprimerTable(table.id)}
+                      className="text-gray-400 hover:text-red-500 bg-white p-1.5 rounded-md shadow-sm border border-gray-100"
+                    >
+                      <span className="material-symbols-outlined text-[18px]">delete</span>
+                    </button>
                   </div>
                 ))}
               </div>
@@ -280,9 +499,74 @@ export default function DashboardGarant() {
               <p className="text-center py-6 text-gray-500 text-sm border border-dashed rounded-xl">Aucune table ajoutée.</p>
             )}
           </section>
-
         </div>
       </div>
+
+      {/* ================= MODALS (POP-UPS) ================= */}
+
+      {/* MODAL MODIFIER ETABLISSEMENT */}
+      {showEditModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex justify-center items-center p-4">
+          <div className="bg-white p-6 rounded-2xl shadow-xl max-w-lg w-full">
+            <h2 className="text-xl font-bold mb-4">Modifier l'établissement</h2>
+            <form onSubmit={handleEditSubmit} className="space-y-3">
+              <input type="text" placeholder="Nom" className="w-full border p-2 rounded"
+                value={editData.nom} onChange={e => setEditData({...editData, nom: e.target.value})} required />
+              <textarea placeholder="Description" className="w-full border p-2 rounded"
+                value={editData.description} onChange={e => setEditData({...editData, description: e.target.value})} required />
+              <input type="text" placeholder="Adresse" className="w-full border p-2 rounded"
+                value={editData.adresse} onChange={e => setEditData({...editData, adresse: e.target.value})} required />
+              <input type="text" placeholder="Ville" className="w-full border p-2 rounded"
+                value={editData.ville} onChange={e => setEditData({...editData, ville: e.target.value})} required />
+              <input type="text" placeholder="Téléphone" className="w-full border p-2 rounded"
+                value={editData.telephone} onChange={e => setEditData({...editData, telephone: e.target.value})} required />
+              
+              <div className="flex justify-end gap-2 mt-4">
+                <button type="button" onClick={() => setShowEditModal(false)} className="px-4 py-2 text-gray-600">Annuler</button>
+                <button type="submit" className="bg-teal-600 text-white px-4 py-2 rounded hover:bg-teal-700">Sauvegarder</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL AJOUTER TABLE */}
+      {showAddTableModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex justify-center items-center p-4">
+          <div className="bg-white p-6 rounded-2xl shadow-xl max-w-sm w-full">
+            <h2 className="text-xl font-bold mb-4">Ajouter une Table</h2>
+            <form onSubmit={handleAddTableSubmit} className="space-y-3">
+              <input type="text" placeholder="Numéro de table (ex: 3)" className="w-full border p-2 rounded"
+                value={newTable.numero} onChange={e => setNewTable({...newTable, numero: e.target.value})} required />
+              <input type="number" placeholder="Capacité (ex: 4)" className="w-full border p-2 rounded"
+                value={newTable.capacite} onChange={e => setNewTable({...newTable, capacite: e.target.value})} required />
+              
+              <div className="flex justify-end gap-2 mt-4">
+                <button type="button" onClick={() => setShowAddTableModal(false)} className="px-4 py-2 text-gray-600">Annuler</button>
+                <button type="submit" className="bg-teal-600 text-white px-4 py-2 rounded hover:bg-teal-700">Ajouter</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL AJOUTER IMAGE (CheckBox m7yeda) */}
+      {showAddImageModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex justify-center items-center p-4">
+          <div className="bg-white p-6 rounded-2xl shadow-xl max-w-sm w-full">
+            <h2 className="text-xl font-bold mb-4">Ajouter une Photo</h2>
+            <form onSubmit={handleAddImageSubmit} className="space-y-3">
+              <input type="file" accept="image/*" className="w-full border p-2 rounded"
+                onChange={e => setNewImage({ file: e.target.files[0] })} required />
+              
+              <div className="flex justify-end gap-2 mt-6">
+                <button type="button" onClick={() => setShowAddImageModal(false)} className="px-4 py-2 text-gray-600">Annuler</button>
+                <button type="submit" className="bg-teal-600 text-white px-4 py-2 rounded hover:bg-teal-700">Uploader</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
