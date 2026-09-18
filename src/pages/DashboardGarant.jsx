@@ -33,9 +33,11 @@ export default function DashboardGarant() {
   const [showAddImageModal, setShowAddImageModal] = useState(false);
   const [newImage, setNewImage] = useState({ file: null });
 
-  // État pour la catégorie
   const [showAddCategoryModal, setShowAddCategoryModal] = useState(false);
   const [newCategory, setNewCategory] = useState({ nom: '' });
+
+  // ================= ETAT POUR LES CATEGORIES DU MENU =================
+  const [activeCategory, setActiveCategory] = useState('all');
 
   // ================= FETCH DETAILS =================
   const fetchDetails = useCallback(async () => {
@@ -58,6 +60,11 @@ export default function DashboardGarant() {
   useEffect(() => {
     fetchDetails();
   }, [fetchDetails]);
+
+  // ================= FILTRAGE DES PRODUITS =================
+  const displayedProducts = activeCategory === 'all' 
+    ? etablissement?.produits 
+    : etablissement?.produits?.filter(prod => prod.categorie?.id === activeCategory);
 
   // ================= FONCTIONNALITÉS =================
 
@@ -418,31 +425,72 @@ export default function DashboardGarant() {
             </div>
           </section>
 
-          {/* Menu */}
+          {/* ================= MENU SECTION (Design Modifié) ================= */}
           <section className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+            {/* Header Menu */}
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-xl font-bold flex items-center gap-2">
                 <span className="material-symbols-outlined text-teal-600">restaurant_menu</span>
-                Menu ({etablissement.produits?.length || 0})
+                Menu
               </h2>
-              <div className="flex gap-2">
-                <button 
-                  onClick={() => setShowAddCategoryModal(true)}
-                  className="bg-teal-50 text-teal-600 px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-1 hover:bg-teal-100 shadow-sm transition-colors"
-                >
-                  <span className="material-symbols-outlined text-[18px]">category</span>
-                  Nouvelle Catégorie
-                </button>
-                <button className="bg-teal-600 text-white px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-1 hover:bg-teal-700 shadow-sm transition-colors">
-                  <span className="material-symbols-outlined text-[18px]">add</span>
-                  Nouveau plat
-                </button>
-              </div>
+              
+              <button 
+                onClick={() => setShowAddCategoryModal(true)}
+                className="bg-teal-50 text-teal-600 px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-1 hover:bg-teal-100 shadow-sm transition-colors"
+              >
+                <span className="material-symbols-outlined text-[18px]">category</span>
+                Nouvelle Catégorie
+              </button>
             </div>
             
+            {/* Barre des Catégories (Tabs) */}
+            <div className="flex flex-wrap gap-2 mb-6 p-1 bg-gray-50 rounded-xl border border-gray-100">
+              <button 
+                onClick={() => setActiveCategory('all')}
+                className={`px-4 py-2 rounded-lg text-sm font-bold transition-all duration-200 ${
+                  activeCategory === 'all' 
+                    ? 'bg-white text-teal-600 shadow-sm border border-gray-200' 
+                    : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+                }`}
+              >
+                Toutes les catégories
+              </button>
+              
+              {etablissement.categories?.map(cat => (
+                <button 
+                  key={cat.id}
+                  onClick={() => setActiveCategory(cat.id)}
+                  className={`px-4 py-2 rounded-lg text-sm font-bold transition-all duration-200 ${
+                    activeCategory === cat.id 
+                      ? 'bg-white text-teal-600 shadow-sm border border-gray-200' 
+                      : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+                  }`}
+                >
+                  {cat.nom}
+                </button>
+              ))}
+            </div>
+
+            {/* En-tête de la Catégorie Active et Bouton Nouveau Plat */}
+            <div className="flex justify-between items-center mb-4 pb-4 border-b border-gray-100">
+              <h3 className="font-bold text-gray-800 text-lg flex items-center gap-2">
+                {activeCategory === 'all' ? 'Tous les plats' : etablissement.categories?.find(c => c.id === activeCategory)?.nom}
+                <span className="bg-gray-100 text-gray-600 text-xs px-2 py-1 rounded-md">
+                  {displayedProducts?.length || 0}
+                </span>
+              </h3>
+              
+              {/* Le bouton Nouveau plat est maintenant ici, lié à la catégorie */}
+              <button className="bg-teal-600 text-white px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-1 hover:bg-teal-700 shadow-sm transition-colors">
+                <span className="material-symbols-outlined text-[18px]">add</span>
+                Nouveau plat {activeCategory !== 'all' && 'ici'}
+              </button>
+            </div>
+            
+            {/* Liste des produits (Filtrée) */}
             <div className="space-y-4">
-              {etablissement.produits?.length > 0 ? (
-                etablissement.produits.map((prod) => (
+              {displayedProducts?.length > 0 ? (
+                displayedProducts.map((prod) => (
                   <div key={prod.id} className="flex gap-4 p-4 border border-gray-100 rounded-xl hover:shadow-md transition-shadow bg-gray-50/50">
                     <div className="w-20 h-20 bg-gray-200 rounded-lg overflow-hidden flex-shrink-0">
                       {prod.produit_images?.[0] ? (
@@ -455,7 +503,7 @@ export default function DashboardGarant() {
                       <div className="flex justify-between items-start">
                         <div>
                           <h3 className="font-bold text-gray-900">{prod.nom}</h3>
-                          {prod.categorie && (
+                          {prod.categorie && activeCategory === 'all' && (
                             <span className="text-[10px] uppercase font-bold bg-teal-50 text-teal-700 px-2 py-0.5 rounded mt-1 inline-block">
                               {prod.categorie.nom}
                             </span>
@@ -470,7 +518,10 @@ export default function DashboardGarant() {
                   </div>
                 ))
               ) : (
-                <p className="text-center py-6 text-gray-500 text-sm border border-dashed rounded-xl">Aucun plat dans votre menu.</p>
+                <div className="text-center py-10 border border-dashed border-gray-200 rounded-xl bg-gray-50">
+                  <span className="material-symbols-outlined text-gray-400 text-4xl mb-2">no_meals</span>
+                  <p className="text-gray-500 text-sm font-medium">Aucun plat dans cette catégorie.</p>
+                </div>
               )}
             </div>
           </section>
