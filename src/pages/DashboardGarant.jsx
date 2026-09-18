@@ -63,10 +63,8 @@ export default function DashboardGarant() {
 
   // ================= EXTRACTION & FILTRAGE DES CATÉGORIES ET PRODUITS =================
   
-  // Utilisation directe du tableau "categories" fourni par l'API JSON
   const categoriesList = etablissement?.categories || [];
 
-  // Filtrage des produits selon la catégorie active (via categorie_id)
   const displayedProducts = activeCategory === 'all' 
     ? etablissement?.produits 
     : etablissement?.produits?.filter(prod => prod.categorie_id === activeCategory);
@@ -289,6 +287,31 @@ export default function DashboardGarant() {
     }
   };
 
+  // 10. Supprimer une Catégorie
+  const supprimerCategorie = async (categorieId) => {
+    if (!window.confirm("Êtes-vous sûr de vouloir supprimer cette catégorie ?")) return;
+    try {
+      await axiosInstance.post('/DeletCategorie', {
+        IdEtablissement: etablissement.id,
+        IdCategorie: categorieId
+      });
+      
+      // Si la catégorie supprimée était active, on revient sur "all"
+      if (activeCategory === categorieId) {
+        setActiveCategory('all');
+      }
+
+      setEtablissement(prev => ({
+        ...prev,
+        categories: prev.categories.filter(cat => cat.id !== categorieId)
+      }));
+      notify("La catégorie a été supprimée avec succès.");
+    } catch (error) {
+      console.error("Erreur suppression catégorie:", error);
+      notify("Une erreur est survenue lors de la suppression de la catégorie.", "error");
+    }
+  };
+
   // ================= RENDU =================
   if (loading) {
     return (
@@ -448,7 +471,7 @@ export default function DashboardGarant() {
               </button>
             </div>
             
-            {/* Barre des Catégories (Onglets) */}
+            {/* Barre des Catégories (Onglets avec bouton Delete) */}
             <div className="flex flex-wrap gap-2 mb-6 p-1 bg-gray-50 rounded-xl border border-gray-100">
               <button 
                 onClick={() => setActiveCategory('all')}
@@ -462,17 +485,28 @@ export default function DashboardGarant() {
               </button>
               
               {categoriesList.map(cat => (
-                <button 
-                  key={cat.id}
-                  onClick={() => setActiveCategory(cat.id)}
-                  className={`px-4 py-2 rounded-lg text-sm font-bold transition-all duration-200 ${
+                <div 
+                  key={cat.id} 
+                  className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-bold transition-all duration-200 border ${
                     activeCategory === cat.id 
-                      ? 'bg-white text-teal-600 shadow-sm border border-gray-200' 
-                      : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+                      ? 'bg-white text-teal-600 shadow-sm border-gray-200' 
+                      : 'bg-white/50 text-gray-500 border-gray-100 hover:bg-gray-100'
                   }`}
                 >
-                  {cat.nom}
-                </button>
+                  <button onClick={() => setActiveCategory(cat.id)} className="outline-none">
+                    {cat.nom}
+                  </button>
+                  <button 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      supprimerCategorie(cat.id);
+                    }}
+                    title="Supprimer la catégorie"
+                    className="text-gray-400 hover:text-red-500 p-1 ml-1 rounded-full transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-[14px]">close</span>
+                  </button>
+                </div>
               ))}
             </div>
 
