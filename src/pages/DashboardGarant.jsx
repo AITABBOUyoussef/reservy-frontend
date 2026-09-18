@@ -8,7 +8,7 @@ export default function DashboardGarant() {
   const [etablissement, setEtablissement] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // ================= NOTIFICATIONS SYSTEM =================
+  // ================= SYSTÈME DE NOTIFICATIONS =================
   const [notifications, setNotifications] = useState([]);
 
   const notify = (message, type = 'success') => {
@@ -21,7 +21,7 @@ export default function DashboardGarant() {
 
   const IMAGE_BASE_URL = "http://127.0.0.1:8000/photos/";
 
-  // ================= ETATS POUR LES MODALS =================
+  // ================= ÉTATS POUR LES MODALS =================
   const [editType, setEditType] = useState('');
   const [showEditModal, setShowEditModal] = useState(false);
   const [editData, setEditData] = useState({});
@@ -33,7 +33,13 @@ export default function DashboardGarant() {
   const [showAddImageModal, setShowAddImageModal] = useState(false);
   const [newImage, setNewImage] = useState({ file: null });
 
-  // ================= FETCH DETAILS =================
+  const [showAddCategoryModal, setShowAddCategoryModal] = useState(false);
+  const [newCategory, setNewCategory] = useState({ nom: '' });
+
+  // ================= ÉTAT POUR LES CATÉGORIES DU MENU =================
+  const [activeCategory, setActiveCategory] = useState('all');
+
+  // ================= RÉCUPÉRATION DES DÉTAILS =================
   const fetchDetails = useCallback(async () => {
     setLoading(true);
     try {
@@ -54,6 +60,14 @@ export default function DashboardGarant() {
   useEffect(() => {
     fetchDetails();
   }, [fetchDetails]);
+
+  // ================= EXTRACTION & FILTRAGE DES CATÉGORIES ET PRODUITS =================
+  
+  const categoriesList = etablissement?.categories || [];
+
+  const displayedProducts = activeCategory === 'all' 
+    ? etablissement?.produits 
+    : etablissement?.produits?.filter(prod => prod.categorie_id === activeCategory);
 
   // ================= FONCTIONNALITÉS =================
 
@@ -166,7 +180,7 @@ export default function DashboardGarant() {
     }
   };
 
-  // Handler Global de Sauvegarde
+  // Gestionnaire global de sauvegarde
   const handleSave = async (e) => {
     e.preventDefault();
     if (editType === 'etablissement') {
@@ -244,6 +258,59 @@ export default function DashboardGarant() {
     }
   };
 
+  // 9. Ajouter une Catégorie
+  const handleAddCategorySubmit = async (e) => {
+    e.preventDefault();
+    if (!newCategory.nom.trim()) return notify("Le nom de la catégorie est requis.", "error");
+    
+    try {
+      await axiosInstance.post('/AddCategorie', {
+        etablissement_id: etablissement.id,
+        nom: newCategory.nom
+      });
+      fetchDetails(); 
+      setShowAddCategoryModal(false);
+      setNewCategory({ nom: '' });
+      notify("La catégorie a été ajoutée avec succès.");
+    } catch (error) {
+       if (error.response?.status === 422) {
+          const errorMessages = error.response.data.errors;
+          if (errorMessages?.nom) {
+            notify(errorMessages.nom[0], "error"); 
+          } else {
+            notify(error.response.data.message || "Les données fournies sont invalides.", "error");
+          }
+      } else {
+        console.error("Erreur ajout catégorie:", error);
+        notify("Erreur de connexion au serveur.", "error");
+      }
+    }
+  };
+
+  // 10. Supprimer une Catégorie
+  const supprimerCategorie = async (categorieId) => {
+    if (!window.confirm("Êtes-vous sûr de vouloir supprimer cette catégorie ?")) return;
+    try {
+      await axiosInstance.post('/DeletCategorie', {
+        IdEtablissement: etablissement.id,
+        IdCategorie: categorieId
+      });
+      
+      // Si la catégorie supprimée était active, on revient sur "all"
+      if (activeCategory === categorieId) {
+        setActiveCategory('all');
+      }
+
+      setEtablissement(prev => ({
+        ...prev,
+        categories: prev.categories.filter(cat => cat.id !== categorieId)
+      }));
+      notify("La catégorie a été supprimée avec succès.");
+    } catch (error) {
+      console.error("Erreur suppression catégorie:", error);
+      notify("Une erreur est survenue lors de la suppression de la catégorie.", "error");
+    }
+  };
 
   // ================= RENDU =================
   if (loading) {
@@ -282,7 +349,7 @@ export default function DashboardGarant() {
     <div className="bg-gray-50 min-h-screen pb-12 font-sans text-gray-900 relative">
       <Navbar />
 
-      {/* ================= TOAST NOTIFICATIONS CONTAINER ================= */}
+      {/* ================= CONTENEUR DES NOTIFICATIONS TOAST ================= */}
       <div className="fixed top-20 right-6 z-[9999] flex flex-col gap-3 pointer-events-none">
         {notifications.map((n) => (
           <div 
@@ -298,7 +365,7 @@ export default function DashboardGarant() {
         ))}
       </div>
       
-      {/* HEADER & COVER */}
+      {/* EN-TÊTE & COUVERTURE */}
       <div className="relative w-full h-72 bg-teal-900 mt-[64px]">
         {mainImage ? (
           <img 
@@ -342,7 +409,7 @@ export default function DashboardGarant() {
         </div>
       </div>
 
-      {/* MAIN DASHBOARD GRID */}
+      {/* GRILLE PRINCIPALE DU TABLEAU DE BORD */}
       <div className="max-w-6xl mx-auto px-6 mt-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
         
         {/* COLONNE GAUCHE */}
@@ -386,22 +453,82 @@ export default function DashboardGarant() {
             </div>
           </section>
 
-          {/* Menu */}
+          {/* ================= SECTION MENU (Onglets de Catégories & Plats) ================= */}
           <section className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+            {/* En-tête du Menu */}
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-xl font-bold flex items-center gap-2">
                 <span className="material-symbols-outlined text-teal-600">restaurant_menu</span>
-                Menu ({etablissement.produits?.length || 0})
+                Menu
               </h2>
-              <button className="bg-teal-600 text-white px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-1 hover:bg-teal-700 shadow-sm transition-colors">
-                <span className="material-symbols-outlined text-[18px]">add</span>
-                Nouveau plat
+              
+              <button 
+                onClick={() => setShowAddCategoryModal(true)}
+                className="bg-teal-50 text-teal-600 px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-1 hover:bg-teal-100 shadow-sm transition-colors"
+              >
+                <span className="material-symbols-outlined text-[18px]">category</span>
+                Nouvelle Catégorie
               </button>
             </div>
             
+            {/* Barre des Catégories (Onglets avec bouton Delete) */}
+            <div className="flex flex-wrap gap-2 mb-6 p-1 bg-gray-50 rounded-xl border border-gray-100">
+              <button 
+                onClick={() => setActiveCategory('all')}
+                className={`px-4 py-2 rounded-lg text-sm font-bold transition-all duration-200 ${
+                  activeCategory === 'all' 
+                    ? 'bg-white text-teal-600 shadow-sm border border-gray-200' 
+                    : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+                }`}
+              >
+                Toutes les catégories
+              </button>
+              
+              {categoriesList.map(cat => (
+                <div 
+                  key={cat.id} 
+                  className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-bold transition-all duration-200 border ${
+                    activeCategory === cat.id 
+                      ? 'bg-white text-teal-600 shadow-sm border-gray-200' 
+                      : 'bg-white/50 text-gray-500 border-gray-100 hover:bg-gray-100'
+                  }`}
+                >
+                  <button onClick={() => setActiveCategory(cat.id)} className="outline-none">
+                    {cat.nom}
+                  </button>
+                  <button 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      supprimerCategorie(cat.id);
+                    }}
+                    title="Supprimer la catégorie"
+                    className="text-gray-400 hover:text-red-500 p-1 ml-1 rounded-full transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-[14px]">close</span>
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            {/* Titre de la Catégorie Active & Bouton Nouveau plat */}
+            <div className="flex justify-between items-center mb-4 pb-4 border-b border-gray-100">
+              <h3 className="font-bold text-gray-800 text-lg flex items-center gap-2">
+                {activeCategory === 'all' ? 'Tous les plats' : categoriesList.find(c => c.id === activeCategory)?.nom}
+                <span className="bg-gray-100 text-gray-600 text-xs px-2 py-1 rounded-md">
+                  {displayedProducts?.length || 0}
+                </span>
+              </h3>
+              
+              <button className="bg-teal-600 text-white px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-1 hover:bg-teal-700 shadow-sm transition-colors">
+                <span className="material-symbols-outlined text-[18px]">add</span>
+                Nouveau plat {activeCategory !== 'all' && 'dans cette catégorie'}
+              </button>
+            </div>
+            
+            {/* Liste des produits filtrés */}
             <div className="space-y-4">
-              {etablissement.produits?.length > 0 ? (
-                etablissement.produits.map((prod) => (
+              {displayedProducts?.length > 0 ? (
+                displayedProducts.map((prod) => (
                   <div key={prod.id} className="flex gap-4 p-4 border border-gray-100 rounded-xl hover:shadow-md transition-shadow bg-gray-50/50">
                     <div className="w-20 h-20 bg-gray-200 rounded-lg overflow-hidden flex-shrink-0">
                       {prod.produit_images?.[0] ? (
@@ -414,7 +541,7 @@ export default function DashboardGarant() {
                       <div className="flex justify-between items-start">
                         <div>
                           <h3 className="font-bold text-gray-900">{prod.nom}</h3>
-                          {prod.categorie && (
+                          {prod.categorie && activeCategory === 'all' && (
                             <span className="text-[10px] uppercase font-bold bg-teal-50 text-teal-700 px-2 py-0.5 rounded mt-1 inline-block">
                               {prod.categorie.nom}
                             </span>
@@ -429,7 +556,10 @@ export default function DashboardGarant() {
                   </div>
                 ))
               ) : (
-                <p className="text-center py-6 text-gray-500 text-sm border border-dashed rounded-xl">Aucun plat dans votre menu.</p>
+                <div className="text-center py-10 border border-dashed border-gray-200 rounded-xl bg-gray-50">
+                  <span className="material-symbols-outlined text-gray-400 text-4xl mb-2">no_meals</span>
+                  <p className="text-gray-500 text-sm font-medium">Aucun plat dans cette catégorie.</p>
+                </div>
               )}
             </div>
           </section>
@@ -485,10 +615,10 @@ export default function DashboardGarant() {
                   <div key={img.id} className="relative aspect-square rounded-xl overflow-hidden group shadow-sm border border-gray-100 bg-gray-100">
                     <img src={`${IMAGE_BASE_URL}${img.nom_image}`} alt="gallery" className="w-full h-full object-cover" />
                     
-                    {/* Hover Overlay */}
+                    {/* Survol (Overlay) */}
                     <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex justify-center items-center gap-2">
                       
-                      {/* Bouton Nejma (Cover) */}
+                      {/* Bouton Étoile (Cover) */}
                       {img.est_principale !== 1 && (
                         <button 
                           onClick={() => setMainImage(img.id)}
@@ -499,7 +629,7 @@ export default function DashboardGarant() {
                         </button>
                       )}
 
-                      {/* Bouton Delete */}
+                      {/* Bouton Supprimer */}
                       <button 
                         onClick={() => supprimerImage(img.id)}
                         title="Supprimer l'image"
@@ -581,9 +711,9 @@ export default function DashboardGarant() {
         </div>
       </div>
 
-      {/* ================= MODALS (POP-UPS) ================= */}
+      {/* ================= MODALS (FENÊTRES MODALES) ================= */}
 
-      {/* MODAL MODIFIER ETABLISSEMENT */}
+      {/* MODAL MODIFIER ÉTABLISSEMENT */}
       {showEditModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex justify-center items-center p-4">
           <div className="bg-white p-6 rounded-2xl shadow-xl max-w-lg w-full">
@@ -609,7 +739,7 @@ export default function DashboardGarant() {
         </div>
       )}
 
-     {/* MODAL AJOUTER TABLE */}
+      {/* MODAL AJOUTER TABLE */}
       {showAddTableModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex justify-center items-center p-4">
           <div className="bg-white p-6 rounded-2xl shadow-xl max-w-sm w-full">
@@ -680,6 +810,7 @@ export default function DashboardGarant() {
           </div>
         </div>
       )}
+
       {/* MODAL AJOUTER IMAGE */}
       {showAddImageModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex justify-center items-center p-4">
@@ -692,6 +823,30 @@ export default function DashboardGarant() {
               <div className="flex justify-end gap-2 mt-6">
                 <button type="button" onClick={() => setShowAddImageModal(false)} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded">Annuler</button>
                 <button type="submit" className="bg-teal-600 text-white px-4 py-2 rounded hover:bg-teal-700">Uploader</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL AJOUTER CATÉGORIE */}
+      {showAddCategoryModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex justify-center items-center p-4">
+          <div className="bg-white p-6 rounded-2xl shadow-xl max-w-sm w-full">
+            <h2 className="text-xl font-bold mb-4">Ajouter une Catégorie</h2>
+            <form onSubmit={handleAddCategorySubmit} className="space-y-3">
+              <input 
+                type="text" 
+                placeholder="Nom de la catégorie (ex: Pizzas)" 
+                className="w-full border p-2 rounded focus:ring-2 focus:ring-teal-500 outline-none"
+                value={newCategory.nom} 
+                onChange={e => setNewCategory({ nom: e.target.value })} 
+                required 
+              />
+              
+              <div className="flex justify-end gap-2 mt-4">
+                <button type="button" onClick={() => setShowAddCategoryModal(false)} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded">Annuler</button>
+                <button type="submit" className="bg-teal-600 text-white px-4 py-2 rounded hover:bg-teal-700">Ajouter</button>
               </div>
             </form>
           </div>
