@@ -33,6 +33,10 @@ export default function DashboardGarant() {
   const [showAddImageModal, setShowAddImageModal] = useState(false);
   const [newImage, setNewImage] = useState({ file: null });
 
+  // État pour la catégorie
+  const [showAddCategoryModal, setShowAddCategoryModal] = useState(false);
+  const [newCategory, setNewCategory] = useState({ nom: '' });
+
   // ================= FETCH DETAILS =================
   const fetchDetails = useCallback(async () => {
     setLoading(true);
@@ -244,6 +248,34 @@ export default function DashboardGarant() {
     }
   };
 
+  // 9. Ajouter une Catégorie
+  const handleAddCategorySubmit = async (e) => {
+    e.preventDefault();
+    if (!newCategory.nom.trim()) return notify("Le nom de la catégorie est requis.", "error");
+    
+    try {
+      await axiosInstance.post('/AddCategorie', {
+        etablissement_id: etablissement.id,
+        nom: newCategory.nom
+      });
+      fetchDetails(); 
+      setShowAddCategoryModal(false);
+      setNewCategory({ nom: '' });
+      notify("La catégorie a été ajoutée avec succès.");
+    } catch (error) {
+       if (error.response?.status === 422) {
+          const errorMessages = error.response.data.errors;
+          if (errorMessages?.nom) {
+            notify(errorMessages.nom[0], "error"); 
+          } else {
+            notify(error.response.data.message || "Les données fournies sont invalides.", "error");
+          }
+      } else {
+        console.error("Erreur ajout catégorie:", error);
+        notify("Erreur de connexion au serveur.", "error");
+      }
+    }
+  };
 
   // ================= RENDU =================
   if (loading) {
@@ -393,10 +425,19 @@ export default function DashboardGarant() {
                 <span className="material-symbols-outlined text-teal-600">restaurant_menu</span>
                 Menu ({etablissement.produits?.length || 0})
               </h2>
-              <button className="bg-teal-600 text-white px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-1 hover:bg-teal-700 shadow-sm transition-colors">
-                <span className="material-symbols-outlined text-[18px]">add</span>
-                Nouveau plat
-              </button>
+              <div className="flex gap-2">
+                <button 
+                  onClick={() => setShowAddCategoryModal(true)}
+                  className="bg-teal-50 text-teal-600 px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-1 hover:bg-teal-100 shadow-sm transition-colors"
+                >
+                  <span className="material-symbols-outlined text-[18px]">category</span>
+                  Nouvelle Catégorie
+                </button>
+                <button className="bg-teal-600 text-white px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-1 hover:bg-teal-700 shadow-sm transition-colors">
+                  <span className="material-symbols-outlined text-[18px]">add</span>
+                  Nouveau plat
+                </button>
+              </div>
             </div>
             
             <div className="space-y-4">
@@ -609,7 +650,7 @@ export default function DashboardGarant() {
         </div>
       )}
 
-     {/* MODAL AJOUTER TABLE */}
+      {/* MODAL AJOUTER TABLE */}
       {showAddTableModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex justify-center items-center p-4">
           <div className="bg-white p-6 rounded-2xl shadow-xl max-w-sm w-full">
@@ -680,6 +721,7 @@ export default function DashboardGarant() {
           </div>
         </div>
       )}
+
       {/* MODAL AJOUTER IMAGE */}
       {showAddImageModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex justify-center items-center p-4">
@@ -692,6 +734,30 @@ export default function DashboardGarant() {
               <div className="flex justify-end gap-2 mt-6">
                 <button type="button" onClick={() => setShowAddImageModal(false)} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded">Annuler</button>
                 <button type="submit" className="bg-teal-600 text-white px-4 py-2 rounded hover:bg-teal-700">Uploader</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL AJOUTER CATEGORIE */}
+      {showAddCategoryModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex justify-center items-center p-4">
+          <div className="bg-white p-6 rounded-2xl shadow-xl max-w-sm w-full">
+            <h2 className="text-xl font-bold mb-4">Ajouter une Catégorie</h2>
+            <form onSubmit={handleAddCategorySubmit} className="space-y-3">
+              <input 
+                type="text" 
+                placeholder="Nom de la catégorie (ex: Pizzas)" 
+                className="w-full border p-2 rounded focus:ring-2 focus:ring-teal-500 outline-none"
+                value={newCategory.nom} 
+                onChange={e => setNewCategory({ nom: e.target.value })} 
+                required 
+              />
+              
+              <div className="flex justify-end gap-2 mt-4">
+                <button type="button" onClick={() => setShowAddCategoryModal(false)} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded">Annuler</button>
+                <button type="submit" className="bg-teal-600 text-white px-4 py-2 rounded hover:bg-teal-700">Ajouter</button>
               </div>
             </form>
           </div>
