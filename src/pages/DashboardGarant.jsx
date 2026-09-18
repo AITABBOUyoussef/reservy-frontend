@@ -8,17 +8,29 @@ export default function DashboardGarant() {
   const [etablissement, setEtablissement] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // ================= NOTIFICATIONS SYSTEM =================
+  const [notifications, setNotifications] = useState([]);
+
+  const notify = (message, type = 'success') => {
+    const id = Date.now();
+    setNotifications(prev => [...prev, { id, message, type }]);
+    setTimeout(() => {
+      setNotifications(prev => prev.filter(n => n.id !== id));
+    }, 4000);
+  };
+
   const IMAGE_BASE_URL = "http://127.0.0.1:8000/photos/";
 
   // ================= ETATS POUR LES MODALS =================
+  const [editType, setEditType] = useState('');
   const [showEditModal, setShowEditModal] = useState(false);
   const [editData, setEditData] = useState({});
 
   const [showAddTableModal, setShowAddTableModal] = useState(false);
+  const [showEditTableModal, setShowEditTableModal] = useState(false);
   const [newTable, setNewTable] = useState({ numero: '', capacite: '' });
-
+  
   const [showAddImageModal, setShowAddImageModal] = useState(false);
-  // 7yedna est_principale mn state hit wlat dima 0 f l'ajout
   const [newImage, setNewImage] = useState({ file: null });
 
   // ================= FETCH DETAILS =================
@@ -26,13 +38,14 @@ export default function DashboardGarant() {
     setLoading(true);
     try {
       const response = await axiosInstance.get('/MonEtablissment');
-      if (response.data && response.data.etablissements && response.data.etablissements.length > 0) {
+      if (response.data?.etablissements?.length > 0) {
         setEtablissement(response.data.etablissements[0]);
       } else {
         setEtablissement(null);
       }
     } catch (error) {
-      console.error("Erreur lors de la récupération des détails:", error);
+      console.error("Erreur de récupération:", error);
+      notify("Impossible de charger les données de l'établissement.", "error");
     } finally {
       setLoading(false);
     }
@@ -45,8 +58,7 @@ export default function DashboardGarant() {
   // ================= FONCTIONNALITÉS =================
 
   // 1. Modifier l'établissement
-  const handleEditSubmit = async (e) => {
-    e.preventDefault();
+  const handleEditSubmit = async () => {
     try {
       await axiosInstance.post('/EditEtablissement', {
         IdEtablissement: etablissement.id,
@@ -59,31 +71,31 @@ export default function DashboardGarant() {
       });
       setEtablissement({ ...etablissement, ...editData });
       setShowEditModal(false);
-      alert("Etablissement modifié avec succès !");
+      notify("L'établissement a été mis à jour avec succès.");
     } catch (error) {
       console.error("Erreur de modification:", error);
-      alert("Erreur lors de la modification.");
+      notify("Une erreur est survenue lors de la mise à jour.", "error");
     }
   };
 
   // 2. Supprimer l'établissement
   const supprimerEtablissement = async () => {
-    if (!window.confirm("Voulez-vous vraiment supprimer cet établissement ?")) return;
+    if (!window.confirm("Êtes-vous sûr de vouloir supprimer cet établissement ? Cette action est irréversible.")) return;
     try {
       await axiosInstance.post('/DestroyEtablissement', {
         IdEtablissement: etablissement.id,
         gerant_id: etablissement.gerant_id
       });
       setEtablissement(null);
-      alert("Etablissement supprimé.");
+      notify("L'établissement a été supprimé avec succès.");
     } catch (error) {
       console.error("Erreur suppression etablissement:", error);
-      alert("Erreur lors de la suppression.");
+      notify("Une erreur est survenue lors de la suppression.", "error");
     }
   };
 
   // 3. Ajouter une table
- const handleAddTableSubmit = async (e) => {
+  const handleAddTableSubmit = async (e) => {
     e.preventDefault();
     try {
       await axiosInstance.post('/AddTabl', {
@@ -94,28 +106,49 @@ export default function DashboardGarant() {
       fetchDetails(); 
       setShowAddTableModal(false);
       setNewTable({ numero: '', capacite: '' });
-      alert("Table ajoutée b naja7!");
-      
+      notify("La table a été ajoutée avec succès.");
     } catch (error) {
-      // 🚨 Hna fin zedna l'affichage dyal l'erreur s7i7a dyal Laravel
-      if (error.response && error.response.status === 422) {
-        // Hada ghadi yjbed l'message "Had ra9m dyal la table deja kayn..."
-        const errorMessages = error.response.data.errors;
-        if (errorMessages && errorMessages.numero) {
-          alert(errorMessages.numero[0]); // Ki2afichi l'erreur dyal ra9m
-        } else {
-          alert(error.response.data.message || "Kayn mochkil f les données li sifti.");
-        }
+       if (error.response?.status === 422) {
+          const errorMessages = error.response.data.errors;
+          if (errorMessages?.numero) {
+            notify(errorMessages.numero[0], "error"); 
+          } else {
+            notify(error.response.data.message || "Les données fournies sont invalides.", "error");
+          }
       } else {
         console.error("Erreur ajout table:", error);
-        alert("Erreur f serveur ola connexion.");
+        notify("Erreur de connexion au serveur.", "error");
       }
     }
   };
 
-  // 4. Supprimer une table
+  // 4. Modifier une Table 
+  const editTable = async (tableId) => {
+    try {
+      await axiosInstance.post('/EditTabl', {
+        etablissement_id: etablissement.id,
+        IdTabl: tableId,
+        numero: editData.numero,
+        capacite: parseInt(editData.capacite),
+        gerant_id: etablissement.gerant_id
+      });
+      
+      setEtablissement(prev => ({
+        ...prev,
+        tables: prev.tables.map(t => t.id === tableId ? { ...t, ...editData } : t)
+      }));
+      
+      setShowEditTableModal(false);
+      notify("La table a été modifiée avec succès.");
+    } catch (error) {
+      console.error("Erreur de Modification:", error);
+      notify("Une erreur est survenue lors de la modification de la table.", "error");
+    }
+  };
+
+  // 5. Supprimer une table
   const supprimerTable = async (tableId) => {
-    if (!window.confirm("Voulez-vous supprimer cette table ?")) return;
+    if (!window.confirm("Êtes-vous sûr de vouloir retirer cette table ?")) return;
     try {
       await axiosInstance.post('/DaleteTabl', {
         IdEtablissement: etablissement.id,
@@ -126,20 +159,31 @@ export default function DashboardGarant() {
         ...prev,
         tables: prev.tables.filter(table => table.id !== tableId)
       }));
+      notify("La table a été supprimée.");
     } catch (error) {
       console.error("Erreur de suppression:", error);
-      alert("Erreur lors de la suppression de la table.");
+      notify("Une erreur est survenue lors de la suppression de la table.", "error");
     }
   };
 
-  // 5. Ajouter une image (Modifié : Dima 0 f l'ajout)
+  // Handler Global de Sauvegarde
+  const handleSave = async (e) => {
+    e.preventDefault();
+    if (editType === 'etablissement') {
+      handleEditSubmit();
+    } else if (editType === 'tabl') {
+      editTable(editData.IdTabl);
+    }
+  };
+
+  // 6. Ajouter une image
   const handleAddImageSubmit = async (e) => {
     e.preventDefault();
-    if (!newImage.file) return alert("Veuillez sélectionner une image !");
+    if (!newImage.file) return notify("Veuillez sélectionner une image.", "error");
     
     const formData = new FormData();
     formData.append('nom_image', newImage.file);
-    formData.append('est_principale', "0"); // <-- Dima tsift 0 f l'ajout
+    formData.append('est_principale', "0");
     formData.append('etablissement_id', etablissement.id);
 
     try {
@@ -149,15 +193,16 @@ export default function DashboardGarant() {
       fetchDetails(); 
       setShowAddImageModal(false);
       setNewImage({ file: null });
+      notify("L'image a été ajoutée à la galerie.");
     } catch (error) {
       console.error("Erreur ajout image:", error);
-      alert("Erreur lors de l'ajout de l'image.");
+      notify("Une erreur est survenue lors du téléchargement de l'image.", "error");
     }
   };
 
-  // 6. Supprimer une image
+  // 7. Supprimer une image
   const supprimerImage = async (imageId) => {
-    if (!window.confirm("Voulez-vous supprimer cette image ?")) return;
+    if (!window.confirm("Êtes-vous sûr de vouloir supprimer cette image de la galerie ?")) return;
     try {
       await axiosInstance.post('/DaleteImage', {
         IdEtablissement: etablissement.id,
@@ -168,16 +213,16 @@ export default function DashboardGarant() {
         ...prev,
         images: prev.images.filter(img => img.id !== imageId)
       }));
+      notify("L'image a été retirée.");
     } catch (error) {
       console.error("Erreur suppression image:", error);
-      alert("Erreur lors de la suppression de l'image.");
+      notify("Une erreur est survenue lors de la suppression de l'image.", "error");
     }
   };
 
-  // 7. Rendre une image Principale (Cover)
+  // 8. Rendre une image Principale (Cover)
   const setMainImage = async (imageId) => {
-    if (!window.confirm("Voulez-vous définir cette image comme Cover principale ?")) return;
-
+    if (!window.confirm("Voulez-vous définir cette image comme couverture principale ?")) return;
     try {
       await axiosInstance.post('/EditImage', {
         IdEtablissement: etablissement.id,
@@ -192,10 +237,10 @@ export default function DashboardGarant() {
           est_principale: img.id === imageId ? 1 : 0
         }))
       }));
-
+      notify("L'image principale a été mise à jour.");
     } catch (error) {
       console.error("Erreur mise à jour image principale:", error);
-      alert("Erreur lors du changement de l'image principale.");
+      notify("Une erreur est survenue lors du changement de l'image principale.", "error");
     }
   };
 
@@ -236,6 +281,22 @@ export default function DashboardGarant() {
   return (
     <div className="bg-gray-50 min-h-screen pb-12 font-sans text-gray-900 relative">
       <Navbar />
+
+      {/* ================= TOAST NOTIFICATIONS CONTAINER ================= */}
+      <div className="fixed top-20 right-6 z-[9999] flex flex-col gap-3 pointer-events-none">
+        {notifications.map((n) => (
+          <div 
+            key={n.id} 
+            className={`flex items-center gap-3 px-5 py-4 rounded-xl shadow-lg transform transition-all duration-300 translate-y-0 opacity-100 min-w-[300px] pointer-events-auto
+              ${n.type === 'success' ? 'bg-green-50 border border-green-200 text-green-800' : 'bg-red-50 border border-red-200 text-red-800'}`}
+          >
+            <span className="material-symbols-outlined">
+              {n.type === 'success' ? 'check_circle' : 'error'}
+            </span>
+            <p className="text-sm font-semibold">{n.message}</p>
+          </div>
+        ))}
+      </div>
       
       {/* HEADER & COVER */}
       <div className="relative w-full h-72 bg-teal-900 mt-[64px]">
@@ -296,6 +357,7 @@ export default function DashboardGarant() {
               </h2>
               <button 
                 onClick={() => {
+                  setEditType('etablissement');
                   setEditData({
                     nom: etablissement.nom,
                     description: etablissement.description,
@@ -304,7 +366,7 @@ export default function DashboardGarant() {
                     telephone: etablissement.telephone
                   });
                   setShowEditModal(true);
-                }}
+              }}
                 className="text-teal-600 bg-teal-50 px-3 py-1.5 rounded-lg text-sm font-bold flex items-center gap-1 hover:bg-teal-100 transition-colors"
               >
                 <span className="material-symbols-outlined text-[18px]">edit</span>
@@ -486,12 +548,29 @@ export default function DashboardGarant() {
                       </div>
                       <span className="text-sm font-bold text-gray-600">{table.capacite} places</span>
                     </div>
-                    <button 
-                      onClick={() => supprimerTable(table.id)}
-                      className="text-gray-400 hover:text-red-500 bg-white p-1.5 rounded-md shadow-sm border border-gray-100"
-                    >
-                      <span className="material-symbols-outlined text-[18px]">delete</span>
-                    </button>
+                    
+                    <div className="flex gap-2">
+                      <button 
+                        onClick={() => {
+                          setEditType('tabl');
+                          setEditData({
+                            IdTabl: table.id,
+                            numero: table.numero,
+                            capacite: table.capacite,
+                          });
+                          setShowEditTableModal(true);
+                        }}
+                        className="text-gray-400 hover:text-teal-600 bg-white p-1.5 rounded-md shadow-sm border border-gray-100"
+                      >
+                        <span className="material-symbols-outlined text-[18px]">edit</span>
+                      </button>
+                      <button 
+                        onClick={() => supprimerTable(table.id)}
+                        className="text-gray-400 hover:text-red-500 bg-white p-1.5 rounded-md shadow-sm border border-gray-100"
+                      >
+                        <span className="material-symbols-outlined text-[18px]">delete</span>
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -509,20 +588,20 @@ export default function DashboardGarant() {
         <div className="fixed inset-0 bg-black/50 z-50 flex justify-center items-center p-4">
           <div className="bg-white p-6 rounded-2xl shadow-xl max-w-lg w-full">
             <h2 className="text-xl font-bold mb-4">Modifier l'établissement</h2>
-            <form onSubmit={handleEditSubmit} className="space-y-3">
-              <input type="text" placeholder="Nom" className="w-full border p-2 rounded"
-                value={editData.nom} onChange={e => setEditData({...editData, nom: e.target.value})} required />
-              <textarea placeholder="Description" className="w-full border p-2 rounded"
-                value={editData.description} onChange={e => setEditData({...editData, description: e.target.value})} required />
-              <input type="text" placeholder="Adresse" className="w-full border p-2 rounded"
-                value={editData.adresse} onChange={e => setEditData({...editData, adresse: e.target.value})} required />
-              <input type="text" placeholder="Ville" className="w-full border p-2 rounded"
-                value={editData.ville} onChange={e => setEditData({...editData, ville: e.target.value})} required />
-              <input type="text" placeholder="Téléphone" className="w-full border p-2 rounded"
-                value={editData.telephone} onChange={e => setEditData({...editData, telephone: e.target.value})} required />
+            <form onSubmit={handleSave} className="space-y-3">
+              <input type="text" placeholder="Nom" className="w-full border p-2 rounded focus:ring-2 focus:ring-teal-500 outline-none"
+                value={editData.nom || ''} onChange={e => setEditData({...editData, nom: e.target.value})} required />
+              <textarea placeholder="Description" className="w-full border p-2 rounded focus:ring-2 focus:ring-teal-500 outline-none"
+                value={editData.description || ''} onChange={e => setEditData({...editData, description: e.target.value})} required />
+              <input type="text" placeholder="Adresse" className="w-full border p-2 rounded focus:ring-2 focus:ring-teal-500 outline-none"
+                value={editData.adresse || ''} onChange={e => setEditData({...editData, adresse: e.target.value})} required />
+              <input type="text" placeholder="Ville" className="w-full border p-2 rounded focus:ring-2 focus:ring-teal-500 outline-none"
+                value={editData.ville || ''} onChange={e => setEditData({...editData, ville: e.target.value})} required />
+              <input type="text" placeholder="Téléphone" className="w-full border p-2 rounded focus:ring-2 focus:ring-teal-500 outline-none"
+                value={editData.telephone || ''} onChange={e => setEditData({...editData, telephone: e.target.value})} required />
               
               <div className="flex justify-end gap-2 mt-4">
-                <button type="button" onClick={() => setShowEditModal(false)} className="px-4 py-2 text-gray-600">Annuler</button>
+                <button type="button" onClick={() => setShowEditModal(false)} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded">Annuler</button>
                 <button type="submit" className="bg-teal-600 text-white px-4 py-2 rounded hover:bg-teal-700">Sauvegarder</button>
               </div>
             </form>
@@ -530,19 +609,35 @@ export default function DashboardGarant() {
         </div>
       )}
 
-      {/* MODAL AJOUTER TABLE */}
+     {/* MODAL AJOUTER TABLE */}
       {showAddTableModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex justify-center items-center p-4">
           <div className="bg-white p-6 rounded-2xl shadow-xl max-w-sm w-full">
             <h2 className="text-xl font-bold mb-4">Ajouter une Table</h2>
             <form onSubmit={handleAddTableSubmit} className="space-y-3">
-              <input type="text" placeholder="Numéro de table (ex: 3)" className="w-full border p-2 rounded"
-                value={newTable.numero} onChange={e => setNewTable({...newTable, numero: e.target.value})} required />
-              <input type="number" placeholder="Capacité (ex: 4)" className="w-full border p-2 rounded"
-                value={newTable.capacite} onChange={e => setNewTable({...newTable, capacite: e.target.value})} required />
+              <input 
+                type="number" 
+                min="1"
+                placeholder="Numéro de table (ex: 3)" 
+                className="w-full border p-2 rounded focus:ring-2 focus:ring-teal-500 outline-none"
+                value={newTable.numero} 
+                onChange={e => setNewTable({...newTable, numero: e.target.value})} 
+                onKeyDown={(e) => { if (e.key === '-' || e.key === 'e' || e.key === '.' || e.key === '+') e.preventDefault(); }}
+                required 
+              />
+              <input 
+                type="number" 
+                min="1"
+                placeholder="Capacité (ex: 4)" 
+                className="w-full border p-2 rounded focus:ring-2 focus:ring-teal-500 outline-none"
+                value={newTable.capacite} 
+                onChange={e => setNewTable({...newTable, capacite: e.target.value})} 
+                onKeyDown={(e) => { if (e.key === '-' || e.key === 'e' || e.key === '.' || e.key === '+') e.preventDefault(); }}
+                required 
+              />
               
               <div className="flex justify-end gap-2 mt-4">
-                <button type="button" onClick={() => setShowAddTableModal(false)} className="px-4 py-2 text-gray-600">Annuler</button>
+                <button type="button" onClick={() => setShowAddTableModal(false)} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded">Annuler</button>
                 <button type="submit" className="bg-teal-600 text-white px-4 py-2 rounded hover:bg-teal-700">Ajouter</button>
               </div>
             </form>
@@ -550,17 +645,52 @@ export default function DashboardGarant() {
         </div>
       )}
 
-      {/* MODAL AJOUTER IMAGE (CheckBox m7yeda) */}
+      {/* MODAL MODIFIER TABLE */}
+      {showEditTableModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex justify-center items-center p-4">
+          <div className="bg-white p-6 rounded-2xl shadow-xl max-w-sm w-full">
+            <h2 className="text-xl font-bold mb-4">Modifier la Table</h2>
+            <form onSubmit={handleSave} className="space-y-3">
+              <input 
+                type="number" 
+                min="1"
+                placeholder="Numéro de table (ex: 3)" 
+                className="w-full border p-2 rounded focus:ring-2 focus:ring-teal-500 outline-none"
+                value={editData.numero || ''} 
+                onChange={e => setEditData({...editData, numero: e.target.value})} 
+                onKeyDown={(e) => { if (e.key === '-' || e.key === 'e' || e.key === '.' || e.key === '+') e.preventDefault(); }}
+                required 
+              />
+              <input 
+                type="number" 
+                min="1"
+                placeholder="Capacité (ex: 4)" 
+                className="w-full border p-2 rounded focus:ring-2 focus:ring-teal-500 outline-none"
+                value={editData.capacite || ''} 
+                onChange={e => setEditData({...editData, capacite: e.target.value})} 
+                onKeyDown={(e) => { if (e.key === '-' || e.key === 'e' || e.key === '.' || e.key === '+') e.preventDefault(); }}
+                required 
+              />
+              
+              <div className="flex justify-end gap-2 mt-4">
+                <button type="button" onClick={() => setShowEditTableModal(false)} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded">Annuler</button>
+                <button type="submit" className="bg-teal-600 text-white px-4 py-2 rounded hover:bg-teal-700">Sauvegarder</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+      {/* MODAL AJOUTER IMAGE */}
       {showAddImageModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex justify-center items-center p-4">
           <div className="bg-white p-6 rounded-2xl shadow-xl max-w-sm w-full">
             <h2 className="text-xl font-bold mb-4">Ajouter une Photo</h2>
             <form onSubmit={handleAddImageSubmit} className="space-y-3">
-              <input type="file" accept="image/*" className="w-full border p-2 rounded"
+              <input type="file" accept="image/*" className="w-full border p-2 rounded focus:ring-2 focus:ring-teal-500 outline-none"
                 onChange={e => setNewImage({ file: e.target.files[0] })} required />
               
               <div className="flex justify-end gap-2 mt-6">
-                <button type="button" onClick={() => setShowAddImageModal(false)} className="px-4 py-2 text-gray-600">Annuler</button>
+                <button type="button" onClick={() => setShowAddImageModal(false)} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded">Annuler</button>
                 <button type="submit" className="bg-teal-600 text-white px-4 py-2 rounded hover:bg-teal-700">Uploader</button>
               </div>
             </form>
