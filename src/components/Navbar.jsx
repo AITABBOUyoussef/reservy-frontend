@@ -64,7 +64,7 @@ export default function Navbar() {
             )}
 
             {(token && userRole === 'gerant') && (
-              <Link to="/mon-etablissement" className="px-space-md py-space-xs font-label-lg text-label-lg text-secondary bg-surface-card hover:bg-surface-container rounded-full transition-all font-bold">
+              <Link to="/dashboardGarant" className="px-space-md py-space-xs font-label-lg text-label-lg text-secondary bg-surface-card hover:bg-surface-container rounded-full transition-all font-bold">
                 Gérer mon établissement
               </Link>
             )}
