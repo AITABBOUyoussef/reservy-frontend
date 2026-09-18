@@ -8,7 +8,7 @@ export default function DashboardGarant() {
   const [etablissement, setEtablissement] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // ================= NOTIFICATIONS SYSTEM =================
+  // ================= SYSTÈME DE NOTIFICATIONS =================
   const [notifications, setNotifications] = useState([]);
 
   const notify = (message, type = 'success') => {
@@ -21,7 +21,7 @@ export default function DashboardGarant() {
 
   const IMAGE_BASE_URL = "http://127.0.0.1:8000/photos/";
 
-  // ================= ETATS POUR LES MODALS =================
+  // ================= ÉTATS POUR LES MODALS =================
   const [editType, setEditType] = useState('');
   const [showEditModal, setShowEditModal] = useState(false);
   const [editData, setEditData] = useState({});
@@ -36,10 +36,10 @@ export default function DashboardGarant() {
   const [showAddCategoryModal, setShowAddCategoryModal] = useState(false);
   const [newCategory, setNewCategory] = useState({ nom: '' });
 
-  // ================= ETAT POUR LES CATEGORIES DU MENU =================
+  // ================= ÉTAT POUR LES CATÉGORIES DU MENU =================
   const [activeCategory, setActiveCategory] = useState('all');
 
-  // ================= FETCH DETAILS =================
+  // ================= RÉCUPÉRATION DES DÉTAILS =================
   const fetchDetails = useCallback(async () => {
     setLoading(true);
     try {
@@ -61,10 +61,15 @@ export default function DashboardGarant() {
     fetchDetails();
   }, [fetchDetails]);
 
-  // ================= FILTRAGE DES PRODUITS =================
+  // ================= EXTRACTION & FILTRAGE DES CATÉGORIES ET PRODUITS =================
+  
+  // Utilisation directe du tableau "categories" fourni par l'API JSON
+  const categoriesList = etablissement?.categories || [];
+
+  // Filtrage des produits selon la catégorie active (via categorie_id)
   const displayedProducts = activeCategory === 'all' 
     ? etablissement?.produits 
-    : etablissement?.produits?.filter(prod => prod.categorie?.id === activeCategory);
+    : etablissement?.produits?.filter(prod => prod.categorie_id === activeCategory);
 
   // ================= FONCTIONNALITÉS =================
 
@@ -177,7 +182,7 @@ export default function DashboardGarant() {
     }
   };
 
-  // Handler Global de Sauvegarde
+  // Gestionnaire global de sauvegarde
   const handleSave = async (e) => {
     e.preventDefault();
     if (editType === 'etablissement') {
@@ -321,7 +326,7 @@ export default function DashboardGarant() {
     <div className="bg-gray-50 min-h-screen pb-12 font-sans text-gray-900 relative">
       <Navbar />
 
-      {/* ================= TOAST NOTIFICATIONS CONTAINER ================= */}
+      {/* ================= CONTENEUR DES NOTIFICATIONS TOAST ================= */}
       <div className="fixed top-20 right-6 z-[9999] flex flex-col gap-3 pointer-events-none">
         {notifications.map((n) => (
           <div 
@@ -337,7 +342,7 @@ export default function DashboardGarant() {
         ))}
       </div>
       
-      {/* HEADER & COVER */}
+      {/* EN-TÊTE & COUVERTURE */}
       <div className="relative w-full h-72 bg-teal-900 mt-[64px]">
         {mainImage ? (
           <img 
@@ -381,7 +386,7 @@ export default function DashboardGarant() {
         </div>
       </div>
 
-      {/* MAIN DASHBOARD GRID */}
+      {/* GRILLE PRINCIPALE DU TABLEAU DE BORD */}
       <div className="max-w-6xl mx-auto px-6 mt-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
         
         {/* COLONNE GAUCHE */}
@@ -425,9 +430,9 @@ export default function DashboardGarant() {
             </div>
           </section>
 
-          {/* ================= MENU SECTION (Design Modifié) ================= */}
+          {/* ================= SECTION MENU (Onglets de Catégories & Plats) ================= */}
           <section className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-            {/* Header Menu */}
+            {/* En-tête du Menu */}
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-xl font-bold flex items-center gap-2">
                 <span className="material-symbols-outlined text-teal-600">restaurant_menu</span>
@@ -443,7 +448,7 @@ export default function DashboardGarant() {
               </button>
             </div>
             
-            {/* Barre des Catégories (Tabs) */}
+            {/* Barre des Catégories (Onglets) */}
             <div className="flex flex-wrap gap-2 mb-6 p-1 bg-gray-50 rounded-xl border border-gray-100">
               <button 
                 onClick={() => setActiveCategory('all')}
@@ -456,7 +461,7 @@ export default function DashboardGarant() {
                 Toutes les catégories
               </button>
               
-              {etablissement.categories?.map(cat => (
+              {categoriesList.map(cat => (
                 <button 
                   key={cat.id}
                   onClick={() => setActiveCategory(cat.id)}
@@ -471,23 +476,22 @@ export default function DashboardGarant() {
               ))}
             </div>
 
-            {/* En-tête de la Catégorie Active et Bouton Nouveau Plat */}
+            {/* Titre de la Catégorie Active & Bouton Nouveau plat */}
             <div className="flex justify-between items-center mb-4 pb-4 border-b border-gray-100">
               <h3 className="font-bold text-gray-800 text-lg flex items-center gap-2">
-                {activeCategory === 'all' ? 'Tous les plats' : etablissement.categories?.find(c => c.id === activeCategory)?.nom}
+                {activeCategory === 'all' ? 'Tous les plats' : categoriesList.find(c => c.id === activeCategory)?.nom}
                 <span className="bg-gray-100 text-gray-600 text-xs px-2 py-1 rounded-md">
                   {displayedProducts?.length || 0}
                 </span>
               </h3>
               
-              {/* Le bouton Nouveau plat est maintenant ici, lié à la catégorie */}
               <button className="bg-teal-600 text-white px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-1 hover:bg-teal-700 shadow-sm transition-colors">
                 <span className="material-symbols-outlined text-[18px]">add</span>
-                Nouveau plat {activeCategory !== 'all' && 'ici'}
+                Nouveau plat {activeCategory !== 'all' && 'dans cette catégorie'}
               </button>
             </div>
             
-            {/* Liste des produits (Filtrée) */}
+            {/* Liste des produits filtrés */}
             <div className="space-y-4">
               {displayedProducts?.length > 0 ? (
                 displayedProducts.map((prod) => (
@@ -577,10 +581,10 @@ export default function DashboardGarant() {
                   <div key={img.id} className="relative aspect-square rounded-xl overflow-hidden group shadow-sm border border-gray-100 bg-gray-100">
                     <img src={`${IMAGE_BASE_URL}${img.nom_image}`} alt="gallery" className="w-full h-full object-cover" />
                     
-                    {/* Hover Overlay */}
+                    {/* Survol (Overlay) */}
                     <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex justify-center items-center gap-2">
                       
-                      {/* Bouton Nejma (Cover) */}
+                      {/* Bouton Étoile (Cover) */}
                       {img.est_principale !== 1 && (
                         <button 
                           onClick={() => setMainImage(img.id)}
@@ -591,7 +595,7 @@ export default function DashboardGarant() {
                         </button>
                       )}
 
-                      {/* Bouton Delete */}
+                      {/* Bouton Supprimer */}
                       <button 
                         onClick={() => supprimerImage(img.id)}
                         title="Supprimer l'image"
@@ -673,9 +677,9 @@ export default function DashboardGarant() {
         </div>
       </div>
 
-      {/* ================= MODALS (POP-UPS) ================= */}
+      {/* ================= MODALS (FENÊTRES MODALES) ================= */}
 
-      {/* MODAL MODIFIER ETABLISSEMENT */}
+      {/* MODAL MODIFIER ÉTABLISSEMENT */}
       {showEditModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex justify-center items-center p-4">
           <div className="bg-white p-6 rounded-2xl shadow-xl max-w-lg w-full">
@@ -791,7 +795,7 @@ export default function DashboardGarant() {
         </div>
       )}
 
-      {/* MODAL AJOUTER CATEGORIE */}
+      {/* MODAL AJOUTER CATÉGORIE */}
       {showAddCategoryModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex justify-center items-center p-4">
           <div className="bg-white p-6 rounded-2xl shadow-xl max-w-sm w-full">
