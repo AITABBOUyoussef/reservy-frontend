@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import axiosInstance from "../api/axios";
 import { useNavigate } from 'react-router-dom';
+import { getImageUrl } from '../utils/imageUrl';
 
 export default function AllEtablissment() {
   const [etablissements, setEtablissements] = useState([]);
@@ -8,8 +9,6 @@ export default function AllEtablissment() {
   const [deleteLoading, setDeleteLoading] = useState(null);
 
   const navigate = useNavigate();
-  const IMAGE_BASE_URL = "http://127.0.0.1:8000/photos/";
-
   const fetchEtablissements = async () => {
     try {
       const response = await axiosInstance.get('/AllEtablissement');
@@ -90,7 +89,7 @@ export default function AllEtablissment() {
                   {mainImg ? (
                     <img
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                      src={`${IMAGE_BASE_URL}${mainImg.nom_image}`}
+                      src={getImageUrl(mainImg.nom_image)}
                       alt={etab.nom}
                     />
                   ) : (

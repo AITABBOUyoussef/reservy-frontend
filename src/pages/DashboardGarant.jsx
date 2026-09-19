@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axiosInstance from '../api/axios';
 import Navbar from '../components/Navbar';
+import { getImageUrl } from '../utils/imageUrl';
 
 export default function DashboardGarant() {
   const navigate = useNavigate();
@@ -18,8 +19,6 @@ export default function DashboardGarant() {
       setNotifications(prev => prev.filter(n => n.id !== id));
     }, 4000);
   };
-
-  const IMAGE_BASE_URL = "http://127.0.0.1:8000/photos/";
 
   // ================= ÉTATS POUR LES MODALS =================
   const [editType, setEditType] = useState('');
@@ -369,7 +368,7 @@ export default function DashboardGarant() {
       <div className="relative w-full h-72 bg-teal-900 mt-[64px]">
         {mainImage ? (
           <img 
-            src={`${IMAGE_BASE_URL}${mainImage.nom_image}`} 
+            src={getImageUrl(mainImage.nom_image)} 
             alt="Cover" 
             className="w-full h-full object-cover opacity-50 transition-all duration-500"
           />
@@ -532,7 +531,7 @@ export default function DashboardGarant() {
                   <div key={prod.id} className="flex gap-4 p-4 border border-gray-100 rounded-xl hover:shadow-md transition-shadow bg-gray-50/50">
                     <div className="w-20 h-20 bg-gray-200 rounded-lg overflow-hidden flex-shrink-0">
                       {prod.produit_images?.[0] ? (
-                        <img src={`${IMAGE_BASE_URL}${prod.produit_images[0].nom_image}`} alt={prod.nom} className="w-full h-full object-cover" />
+                        <img src={getImageUrl(prod.produit_images[0].nom_image)} alt={prod.nom} className="w-full h-full object-cover" />
                       ) : (
                         <span className="material-symbols-outlined w-full h-full flex justify-center items-center text-gray-400">fastfood</span>
                       )}
@@ -613,7 +612,7 @@ export default function DashboardGarant() {
               <div className="grid grid-cols-2 gap-3">
                 {etablissement.images.map(img => (
                   <div key={img.id} className="relative aspect-square rounded-xl overflow-hidden group shadow-sm border border-gray-100 bg-gray-100">
-                    <img src={`${IMAGE_BASE_URL}${img.nom_image}`} alt="gallery" className="w-full h-full object-cover" />
+                    <img src={getImageUrl(img.nom_image)} alt="gallery" className="w-full h-full object-cover" />
                     
                     {/* Survol (Overlay) */}
                     <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex justify-center items-center gap-2">
