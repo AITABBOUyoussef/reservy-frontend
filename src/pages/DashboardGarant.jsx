@@ -412,7 +412,7 @@ export default function DashboardGarant() {
 
     const formData = new FormData();
     formData.append('produit_id', selectedProduct.id);
-    formData.append('est_principale', '1');
+    formData.append('est_principale', '0');
     formData.append('nom_image', productImage);
 
     try {
@@ -432,6 +432,9 @@ export default function DashboardGarant() {
             }
           : produit)
       }));
+      setSelectedProduct(prev => prev && prev.id === selectedProduct.id
+        ? { ...prev, produit_images: [...(prev.produit_images || []), image] }
+        : prev);
       setShowProductImageModal(false);
       setProductImage(null);
       notify("L'image du produit a été ajoutée avec succès.");
@@ -467,6 +470,32 @@ export default function DashboardGarant() {
     } catch (error) {
       console.error("Erreur suppression image produit:", error);
       notify(error.response?.data?.message || "Une erreur est survenue lors de la suppression.", "error");
+    }
+  };
+
+  const setMainImageProduit = async (produit, imageId) => {
+    try {
+      await axiosInstance.post('/EditProduitImage', {
+        IdProduit: produit.id,
+        IdImage: imageId
+      });
+      const updateImages = images => images.map(image => ({
+        ...image,
+        est_principale: image.id === imageId ? 1 : 0
+      }));
+      setEtablissement(prev => ({
+        ...prev,
+        produits: prev.produits.map(item => item.id === produit.id
+          ? { ...item, produit_images: updateImages(item.produit_images || []) }
+          : item)
+      }));
+      setSelectedProduct(prev => prev && prev.id === produit.id
+        ? { ...prev, produit_images: updateImages(prev.produit_images || []) }
+        : prev);
+      notify("L'image principale du produit a été mise à jour.");
+    } catch (error) {
+      console.error("Erreur mise à jour image principale produit:", error);
+      notify(error.response?.data?.message || "Une erreur est survenue lors du changement de cover.", "error");
     }
   };
 
@@ -1065,8 +1094,18 @@ export default function DashboardGarant() {
                 {selectedProduct.produit_images.map(image => (
                   <div key={image.id} className="relative aspect-square rounded-lg overflow-hidden border border-gray-200">
                     <img src={getImageUrl(image.nom_image)} alt={selectedProduct.nom} className="w-full h-full object-cover" />
+                    {image.est_principale !== 1 && (
+                      <button
+                        type="button"
+                        onClick={() => setMainImageProduit(selectedProduct, image.id)}
+                        className="absolute inset-0 m-auto w-10 h-10 bg-black/60 text-white rounded-full hover:bg-amber-500"
+                        title="Définir comme cover"
+                      >
+                        <span className="material-symbols-outlined">star</span>
+                      </button>
+                    )}
                     {image.est_principale === 1 && (
-                      <span className="absolute bottom-1 left-1 bg-amber-500 text-white text-[9px] px-1.5 py-0.5 rounded">Principale</span>
+                      <span className="absolute bottom-1 left-1 bg-amber-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded uppercase">Cover</span>
                     )}
                     <button
                       type="button"
