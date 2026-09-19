@@ -35,6 +35,15 @@ export default function DashboardGarant() {
   const [showAddCategoryModal, setShowAddCategoryModal] = useState(false);
   const [newCategory, setNewCategory] = useState({ nom: '' });
 
+  const [showProductModal, setShowProductModal] = useState(false);
+  const [productData, setProductData] = useState({
+    IdProduit: null,
+    nom: '',
+    description: '',
+    prix: '',
+    categorie_id: ''
+  });
+
   // ================= ÉTAT POUR LES CATÉGORIES DU MENU =================
   const [activeCategory, setActiveCategory] = useState('all');
 
@@ -311,6 +320,80 @@ export default function DashboardGarant() {
     }
   };
 
+  // 11. Ajouter ou modifier un produit
+  const handleProductSubmit = async (e) => {
+    e.preventDefault();
+    const isEditing = Boolean(productData.IdProduit);
+    const payload = {
+      etablissement_id: etablissement.id,
+      categorie_id: Number(productData.categorie_id),
+      nom: productData.nom.trim(),
+      description: productData.description.trim() || null,
+      prix: Number(productData.prix)
+    };
+
+    try {
+      const response = await axiosInstance.post(
+        isEditing ? '/EditProduit' : '/AddProduit',
+        isEditing ? { ...payload, IdProduit: productData.IdProduit } : payload
+      );
+      const produit = response.data.produit;
+
+      setEtablissement(prev => ({
+        ...prev,
+        produits: isEditing
+          ? prev.produits.map(item => item.id === produit.id ? produit : item)
+          : [...(prev.produits || []), produit].sort((a, b) => a.nom.localeCompare(b.nom))
+      }));
+      setShowProductModal(false);
+      notify(isEditing ? "Le produit a été modifié avec succès." : "Le produit a été ajouté avec succès.");
+    } catch (error) {
+      if (error.response?.status === 422) {
+        const errors = error.response.data.errors || {};
+        notify(Object.values(errors)[0]?.[0] || "Les données fournies sont invalides.", "error");
+      } else {
+        console.error("Erreur produit:", error);
+        notify(error.response?.data?.message || "Une erreur est survenue pour le produit.", "error");
+      }
+    }
+  };
+
+  const supprimerProduit = async (produitId) => {
+    if (!window.confirm("Êtes-vous sûr de vouloir supprimer ce produit ?")) return;
+
+    try {
+      await axiosInstance.post('/DeletProduit', {
+        IdEtablissement: etablissement.id,
+        IdProduit: produitId
+      });
+      setEtablissement(prev => ({
+        ...prev,
+        produits: prev.produits.filter(produit => produit.id !== produitId)
+      }));
+      notify("Le produit a été supprimé avec succès.");
+    } catch (error) {
+      console.error("Erreur suppression produit:", error);
+      notify(error.response?.data?.message || "Une erreur est survenue lors de la suppression.", "error");
+    }
+  };
+
+  const openProductModal = (produit = null) => {
+    setProductData(produit ? {
+      IdProduit: produit.id,
+      nom: produit.nom,
+      description: produit.description || '',
+      prix: produit.prix,
+      categorie_id: produit.categorie_id
+    } : {
+      IdProduit: null,
+      nom: '',
+      description: '',
+      prix: '',
+      categorie_id: activeCategory === 'all' ? (categoriesList[0]?.id || '') : activeCategory
+    });
+    setShowProductModal(true);
+  };
+
   // ================= RENDU =================
   if (loading) {
     return (
@@ -518,7 +601,7 @@ export default function DashboardGarant() {
                 </span>
               </h3>
               
-              <button className="bg-teal-600 text-white px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-1 hover:bg-teal-700 shadow-sm transition-colors">
+              <button onClick={() => openProductModal()} className="bg-teal-600 text-white px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-1 hover:bg-teal-700 shadow-sm transition-colors">
                 <span className="material-symbols-outlined text-[18px]">add</span>
                 Nouveau plat {activeCategory !== 'all' && 'dans cette catégorie'}
               </button>
@@ -546,9 +629,17 @@ export default function DashboardGarant() {
                             </span>
                           )}
                         </div>
-                        <span className="font-extrabold text-amber-600 bg-white border border-amber-100 px-2 py-1 rounded-md shadow-sm">
-                          {Number(prod.prix).toFixed(2)} DH
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className="font-extrabold text-amber-600 bg-white border border-amber-100 px-2 py-1 rounded-md shadow-sm">
+                            {Number(prod.prix).toFixed(2)} DH
+                          </span>
+                          <button onClick={() => openProductModal(prod)} title="Modifier le produit" className="text-gray-400 hover:text-teal-600">
+                            <span className="material-symbols-outlined text-[18px]">edit</span>
+                          </button>
+                          <button onClick={() => supprimerProduit(prod.id)} title="Supprimer le produit" className="text-gray-400 hover:text-red-500">
+                            <span className="material-symbols-outlined text-[18px]">delete</span>
+                          </button>
+                        </div>
                       </div>
                       <p className="text-xs text-gray-500 mt-2 line-clamp-2">{prod.description}</p>
                     </div>
@@ -822,6 +913,63 @@ export default function DashboardGarant() {
               <div className="flex justify-end gap-2 mt-6">
                 <button type="button" onClick={() => setShowAddImageModal(false)} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded">Annuler</button>
                 <button type="submit" className="bg-teal-600 text-white px-4 py-2 rounded hover:bg-teal-700">Uploader</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL AJOUTER / MODIFIER PRODUIT */}
+      {showProductModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex justify-center items-center p-4">
+          <div className="bg-white p-6 rounded-2xl shadow-xl max-w-lg w-full">
+            <h2 className="text-xl font-bold mb-4">
+              {productData.IdProduit ? 'Modifier le produit' : 'Ajouter un produit'}
+            </h2>
+            <form onSubmit={handleProductSubmit} className="space-y-3">
+              <input
+                type="text"
+                placeholder="Nom du produit"
+                className="w-full border p-2 rounded focus:ring-2 focus:ring-teal-500 outline-none"
+                value={productData.nom}
+                onChange={e => setProductData({ ...productData, nom: e.target.value })}
+                required
+              />
+              <textarea
+                placeholder="Description (facultatif)"
+                className="w-full border p-2 rounded focus:ring-2 focus:ring-teal-500 outline-none"
+                value={productData.description}
+                onChange={e => setProductData({ ...productData, description: e.target.value })}
+              />
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                placeholder="Prix (DH)"
+                className="w-full border p-2 rounded focus:ring-2 focus:ring-teal-500 outline-none"
+                value={productData.prix}
+                onChange={e => setProductData({ ...productData, prix: e.target.value })}
+                required
+              />
+              <select
+                className="w-full border p-2 rounded focus:ring-2 focus:ring-teal-500 outline-none"
+                value={productData.categorie_id}
+                onChange={e => setProductData({ ...productData, categorie_id: e.target.value })}
+                required
+              >
+                <option value="">Choisir une catégorie</option>
+                {categoriesList.map(category => (
+                  <option key={category.id} value={category.id}>{category.nom}</option>
+                ))}
+              </select>
+              {categoriesList.length === 0 && (
+                <p className="text-sm text-red-600">Ajoutez d'abord une catégorie pour créer un produit.</p>
+              )}
+              <div className="flex justify-end gap-2 mt-4">
+                <button type="button" onClick={() => setShowProductModal(false)} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded">Annuler</button>
+                <button type="submit" disabled={categoriesList.length === 0} className="bg-teal-600 text-white px-4 py-2 rounded hover:bg-teal-700 disabled:opacity-50 disabled:cursor-not-allowed">
+                  {productData.IdProduit ? 'Sauvegarder' : 'Ajouter'}
+                </button>
               </div>
             </form>
           </div>
