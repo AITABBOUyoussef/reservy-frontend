@@ -29,7 +29,7 @@ export default function AllEtablissment() {
   }, []);
 
   const handNav = (id) => {
-    navigate(`/etablissmentEdite/${id}`); 
+    navigate(`/etablissment/${id}`);
   };
 
   const handleDelete = async (id, e) => {
