@@ -36,6 +36,9 @@ export default function DashboardGarant() {
   const [newCategory, setNewCategory] = useState({ nom: '' });
 
   const [showProductModal, setShowProductModal] = useState(false);
+  const [showProductImageModal, setShowProductImageModal] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [productImage, setProductImage] = useState(null);
   const [productData, setProductData] = useState({
     IdProduit: null,
     nom: '',
@@ -394,6 +397,79 @@ export default function DashboardGarant() {
     setShowProductModal(true);
   };
 
+  const openProductImageModal = (produit) => {
+    setSelectedProduct(produit);
+    setProductImage(null);
+    setShowProductImageModal(true);
+  };
+
+  const handleProductImageSubmit = async (e) => {
+    e.preventDefault();
+    if (!productImage) {
+      notify("Veuillez sélectionner une image.", "error");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('produit_id', selectedProduct.id);
+    formData.append('est_principale', '1');
+    formData.append('nom_image', productImage);
+
+    try {
+      const response = await axiosInstance.post('/AddProduitImage', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      const image = response.data.image;
+      setEtablissement(prev => ({
+        ...prev,
+        produits: prev.produits.map(produit => produit.id === selectedProduct.id
+          ? {
+              ...produit,
+              produit_images: [
+                ...(produit.produit_images || []).map(item => ({ ...item, est_principale: 0 })),
+                image
+              ]
+            }
+          : produit)
+      }));
+      setShowProductImageModal(false);
+      setProductImage(null);
+      notify("L'image du produit a été ajoutée avec succès.");
+    } catch (error) {
+      if (error.response?.status === 422) {
+        const errors = error.response.data.errors || {};
+        notify(Object.values(errors)[0]?.[0] || "L'image fournie est invalide.", "error");
+      } else {
+        console.error("Erreur ajout image produit:", error);
+        notify(error.response?.data?.message || "Une erreur est survenue lors de l'ajout de l'image.", "error");
+      }
+    }
+  };
+
+  const supprimerImageProduit = async (produit, imageId) => {
+    if (!window.confirm("Êtes-vous sûr de vouloir supprimer cette image ?")) return;
+
+    try {
+      await axiosInstance.post('/DeletProduitImage', {
+        IdProduit: produit.id,
+        IdImage: imageId
+      });
+      setEtablissement(prev => ({
+        ...prev,
+        produits: prev.produits.map(item => item.id === produit.id
+          ? { ...item, produit_images: item.produit_images.filter(image => image.id !== imageId) }
+          : item)
+      }));
+      setSelectedProduct(prev => prev && prev.id === produit.id
+        ? { ...prev, produit_images: prev.produit_images.filter(image => image.id !== imageId) }
+        : prev);
+      notify("L'image du produit a été supprimée.");
+    } catch (error) {
+      console.error("Erreur suppression image produit:", error);
+      notify(error.response?.data?.message || "Une erreur est survenue lors de la suppression.", "error");
+    }
+  };
+
   // ================= RENDU =================
   if (loading) {
     return (
@@ -614,7 +690,7 @@ export default function DashboardGarant() {
                   <div key={prod.id} className="flex gap-4 p-4 border border-gray-100 rounded-xl hover:shadow-md transition-shadow bg-gray-50/50">
                     <div className="w-20 h-20 bg-gray-200 rounded-lg overflow-hidden flex-shrink-0">
                       {prod.produit_images?.[0] ? (
-                        <img src={getImageUrl(prod.produit_images[0].nom_image)} alt={prod.nom} className="w-full h-full object-cover" />
+                        <img src={getImageUrl((prod.produit_images.find(image => image.est_principale) || prod.produit_images[0]).nom_image)} alt={prod.nom} className="w-full h-full object-cover" />
                       ) : (
                         <span className="material-symbols-outlined w-full h-full flex justify-center items-center text-gray-400">fastfood</span>
                       )}
@@ -630,6 +706,9 @@ export default function DashboardGarant() {
                           )}
                         </div>
                         <div className="flex items-center gap-2">
+                          <button onClick={() => openProductImageModal(prod)} title="Gérer l'image du produit" className="text-gray-400 hover:text-teal-600">
+                            <span className="material-symbols-outlined text-[18px]">add_a_photo</span>
+                          </button>
                           <span className="font-extrabold text-amber-600 bg-white border border-amber-100 px-2 py-1 rounded-md shadow-sm">
                             {Number(prod.prix).toFixed(2)} DH
                           </span>
@@ -970,6 +1049,48 @@ export default function DashboardGarant() {
                 <button type="submit" disabled={categoriesList.length === 0} className="bg-teal-600 text-white px-4 py-2 rounded hover:bg-teal-700 disabled:opacity-50 disabled:cursor-not-allowed">
                   {productData.IdProduit ? 'Sauvegarder' : 'Ajouter'}
                 </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL IMAGE PRODUIT */}
+      {showProductImageModal && selectedProduct && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex justify-center items-center p-4">
+          <div className="bg-white p-6 rounded-2xl shadow-xl max-w-lg w-full">
+            <h2 className="text-xl font-bold mb-4">Images de {selectedProduct.nom}</h2>
+            {selectedProduct.produit_images?.length > 0 && (
+              <div className="grid grid-cols-3 gap-3 mb-5">
+                {selectedProduct.produit_images.map(image => (
+                  <div key={image.id} className="relative aspect-square rounded-lg overflow-hidden border border-gray-200">
+                    <img src={getImageUrl(image.nom_image)} alt={selectedProduct.nom} className="w-full h-full object-cover" />
+                    {image.est_principale === 1 && (
+                      <span className="absolute bottom-1 left-1 bg-amber-500 text-white text-[9px] px-1.5 py-0.5 rounded">Principale</span>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => supprimerImageProduit(selectedProduct, image.id)}
+                      className="absolute top-1 right-1 bg-black/60 text-white p-1 rounded-full hover:bg-red-600"
+                      title="Supprimer l'image"
+                    >
+                      <span className="material-symbols-outlined text-[15px]">delete</span>
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+            <form onSubmit={handleProductImageSubmit} className="space-y-3">
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/jpg,image/gif"
+                className="w-full border p-2 rounded focus:ring-2 focus:ring-teal-500 outline-none"
+                onChange={e => setProductImage(e.target.files[0] || null)}
+                required
+              />
+              <div className="flex justify-end gap-2 mt-4">
+                <button type="button" onClick={() => setShowProductImageModal(false)} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded">Fermer</button>
+                <button type="submit" className="bg-teal-600 text-white px-4 py-2 rounded hover:bg-teal-700">Uploader</button>
               </div>
             </form>
           </div>
