@@ -1,11 +1,10 @@
 import { Link, useNavigate } from "react-router-dom";
+import { getImageUrl } from "../utils/imageUrl";
 
 export default function Navbar() {
   const navigate = useNavigate();
   const token = localStorage.getItem("token");
   const user = JSON.parse(localStorage.getItem("user") || "null");
-  const backendUrl = "http://127.0.0.1:8000/photos/";
-
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
@@ -83,7 +82,7 @@ export default function Navbar() {
               <div className="flex items-center gap-space-lg">
                 <Link to="/profil" className="flex items-center gap-3 text-on-surface hover:text-primary transition-colors">
                   {user?.avatar ? (
-                    <img src={`${backendUrl}${user.avatar}`} alt="Avatar" className="w-10 h-10 rounded-full object-cover border-2 border-primary-container shadow-sm"/>
+                    <img src={getImageUrl(user.avatar)} alt="Avatar" className="w-10 h-10 rounded-full object-cover border-2 border-primary-container shadow-sm"/>
                   ) : (
                     <div className="w-10 h-10 rounded-full bg-primary-container text-on-primary flex items-center justify-center font-bold text-sm shadow-sm">
                       {user?.name ? user.name.charAt(0).toUpperCase() : "U"}

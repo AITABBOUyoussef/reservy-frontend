@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import axiosInstance from '../api/axios';
 import Navbar from '../components/Navbar';
+import { getImageUrl } from '../utils/imageUrl';
 
 // Icons SVG
 const StarIcon = () => (
@@ -32,14 +33,6 @@ export default function Etablissment() {
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState('ALL');
   const [cart, setCart] = useState([]);
-
-  const IMAGE_BASE_URL = "http://127.0.0.1:8000/photos/";
-
-  const getImageUrl = (imageName) => {
-    if (!imageName) return '';
-    if (imageName.includes('.')) return `${IMAGE_BASE_URL}${imageName}`;
-    return `${IMAGE_BASE_URL}${imageName}.png`;
-  };
 
   const sortImages = (imagesArray) => {
     if (!imagesArray || imagesArray.length === 0) return [];

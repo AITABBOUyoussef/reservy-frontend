@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import Navbar from '../components/Navbar';
 import { useNavigate } from 'react-router-dom';
 import axiosInstance from "../api/axios";
+import { getImageUrl } from '../utils/imageUrl';
 
 export default function Dashboard() {
   const [etablissements, setEtablissements] = useState([]);
@@ -22,8 +23,6 @@ const handGarant = () => {
   }
   navigate("/addEtablissment")
 }
-  const IMAGE_BASE_URL = "http://127.0.0.1:8000/photos/";
-
   useEffect(() => {
     const fetchEtablissements = async () => {
       try {
@@ -121,7 +120,7 @@ const handGarant = () => {
                       <div  className="relative w-full aspect-[16/9] rounded-2xl overflow-hidden bg-gray-200 shadow-sm">
                         <img
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                          src={`${IMAGE_BASE_URL}${etab.nom_image}`}
+                          src={getImageUrl(etab.nom_image)}
                           alt={etab.nom}
                         />
   
