@@ -61,13 +61,13 @@ export default function Navbar() {
         <div className="hidden lg:flex items-center gap-6">
           <nav className="flex items-center gap-6">
             {(!token || userRole === 'client') && (
-              <Link to="/dashboard" className="text-sm font-bold text-gray-700 hover:text-teal-600">
+              <Link to="/" className="text-sm font-bold text-gray-700 hover:text-teal-600">
                 Établissements
               </Link>
             )}
 
             {(token && userRole === 'client') && (
-              <Link to="/dashboard" className="text-sm font-bold text-gray-700 hover:text-teal-600">
+              <Link to="/" className="text-sm font-bold text-gray-700 hover:text-teal-600">
                 Mes Réservations
               </Link>
             )}
@@ -142,13 +142,13 @@ export default function Navbar() {
 
           <nav className="flex flex-col gap-4">
             {(!token || userRole === 'client') && (
-              <Link to="/dashboard" className="text-base font-bold text-gray-800 flex items-center gap-3">
+              <Link to="/" className="text-base font-bold text-gray-800 flex items-center gap-3">
                 <span className="material-symbols-outlined text-gray-400">storefront</span> Établissements
               </Link>
             )}
 
             {(token && userRole === 'client') && (
-              <Link to="/dashboard" className="text-base font-bold text-gray-800 flex items-center gap-3">
+              <Link to="/" className="text-base font-bold text-gray-800 flex items-center gap-3">
                 <span className="material-symbols-outlined text-gray-400">event_seat</span> Mes Réservations
               </Link>
             )}
