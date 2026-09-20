@@ -9,7 +9,7 @@ export default function DashboardGarant() {
   const [etablissement, setEtablissement] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // ================= SYSTÈME DE NOTIFICATIONS =================
+  // ================= NOTIFICATIONS =================
   const [notifications, setNotifications] = useState([]);
 
   const notify = (message, type = 'success') => {
@@ -20,7 +20,7 @@ export default function DashboardGarant() {
     }, 4000);
   };
 
-  // ================= ÉTATS POUR LES MODALS =================
+  // ================= MODALS STATES =================
   const [editType, setEditType] = useState('');
   const [showEditModal, setShowEditModal] = useState(false);
   const [editData, setEditData] = useState({});
@@ -35,10 +35,21 @@ export default function DashboardGarant() {
   const [showAddCategoryModal, setShowAddCategoryModal] = useState(false);
   const [newCategory, setNewCategory] = useState({ nom: '' });
 
-  // ================= ÉTAT POUR LES CATÉGORIES DU MENU =================
+  const [showProductModal, setShowProductModal] = useState(false);
+  const [showProductImageModal, setShowProductImageModal] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [productImage, setProductImage] = useState(null);
+  const [productData, setProductData] = useState({
+    IdProduit: null,
+    nom: '',
+    description: '',
+    prix: '',
+    categorie_id: ''
+  });
+
   const [activeCategory, setActiveCategory] = useState('all');
 
-  // ================= RÉCUPÉRATION DES DÉTAILS =================
+  // ================= FETCH DATA =================
   const fetchDetails = useCallback(async () => {
     setLoading(true);
     try {
@@ -49,7 +60,6 @@ export default function DashboardGarant() {
         setEtablissement(null);
       }
     } catch (error) {
-      console.error("Erreur de récupération:", error);
       notify("Impossible de charger les données de l'établissement.", "error");
     } finally {
       setLoading(false);
@@ -60,54 +70,51 @@ export default function DashboardGarant() {
     fetchDetails();
   }, [fetchDetails]);
 
-  // ================= EXTRACTION & FILTRAGE DES CATÉGORIES ET PRODUITS =================
-  
+  // ================= FILTRAGE CATÉGORIES =================
   const categoriesList = etablissement?.categories || [];
-
+  
+  // Hna 9addina l-mochkil dyal logique: kan-7ewlo kolchi l-String bach y-t9arnou mzyan
   const displayedProducts = activeCategory === 'all' 
     ? etablissement?.produits 
-    : etablissement?.produits?.filter(prod => prod.categorie_id === activeCategory);
+    : etablissement?.produits?.filter(prod => String(prod.categorie_id) === String(activeCategory));
 
-  // ================= FONCTIONNALITÉS =================
-
-  // 1. Modifier l'établissement
+  // ================= LOGIC: ÉTABLISSEMENT =================
   const handleEditSubmit = async () => {
     try {
       await axiosInstance.post('/EditEtablissement', {
         IdEtablissement: etablissement.id,
         gerant_id: etablissement.gerant_id,
-        nom: editData.nom,
-        description: editData.description,
-        adresse: editData.adresse,
-        ville: editData.ville,
-        telephone: editData.telephone
+        ...editData
       });
       setEtablissement({ ...etablissement, ...editData });
       setShowEditModal(false);
-      notify("L'établissement a été mis à jour avec succès.");
+      notify("L'établissement a été mis à jour.");
     } catch (error) {
-      console.error("Erreur de modification:", error);
-      notify("Une erreur est survenue lors de la mise à jour.", "error");
+      notify("Erreur lors de la mise à jour.", "error");
     }
   };
 
-  // 2. Supprimer l'établissement
   const supprimerEtablissement = async () => {
-    if (!window.confirm("Êtes-vous sûr de vouloir supprimer cet établissement ? Cette action est irréversible.")) return;
+    if (!window.confirm("Supprimer cet établissement ? Action irréversible.")) return;
     try {
       await axiosInstance.post('/DestroyEtablissement', {
         IdEtablissement: etablissement.id,
         gerant_id: etablissement.gerant_id
       });
       setEtablissement(null);
-      notify("L'établissement a été supprimé avec succès.");
+      notify("Établissement supprimé.");
     } catch (error) {
-      console.error("Erreur suppression etablissement:", error);
-      notify("Une erreur est survenue lors de la suppression.", "error");
+      notify("Erreur de suppression.", "error");
     }
   };
 
-  // 3. Ajouter une table
+  const handleSave = async (e) => {
+    e.preventDefault();
+    if (editType === 'etablissement') handleEditSubmit();
+    else if (editType === 'tabl') editTable(editData.IdTabl);
+  };
+
+  // ================= LOGIC: TABLES =================
   const handleAddTableSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -119,23 +126,12 @@ export default function DashboardGarant() {
       fetchDetails(); 
       setShowAddTableModal(false);
       setNewTable({ numero: '', capacite: '' });
-      notify("La table a été ajoutée avec succès.");
+      notify("Table ajoutée.");
     } catch (error) {
-       if (error.response?.status === 422) {
-          const errorMessages = error.response.data.errors;
-          if (errorMessages?.numero) {
-            notify(errorMessages.numero[0], "error"); 
-          } else {
-            notify(error.response.data.message || "Les données fournies sont invalides.", "error");
-          }
-      } else {
-        console.error("Erreur ajout table:", error);
-        notify("Erreur de connexion au serveur.", "error");
-      }
+      notify(error.response?.data?.message || "Données invalides.", "error");
     }
   };
 
-  // 4. Modifier une Table 
   const editTable = async (tableId) => {
     try {
       await axiosInstance.post('/EditTabl', {
@@ -145,196 +141,256 @@ export default function DashboardGarant() {
         capacite: parseInt(editData.capacite),
         gerant_id: etablissement.gerant_id
       });
-      
       setEtablissement(prev => ({
         ...prev,
         tables: prev.tables.map(t => t.id === tableId ? { ...t, ...editData } : t)
       }));
-      
       setShowEditTableModal(false);
-      notify("La table a été modifiée avec succès.");
+      notify("Table modifiée.");
     } catch (error) {
-      console.error("Erreur de Modification:", error);
-      notify("Une erreur est survenue lors de la modification de la table.", "error");
+      notify("Erreur de modification.", "error");
     }
   };
 
-  // 5. Supprimer une table
   const supprimerTable = async (tableId) => {
-    if (!window.confirm("Êtes-vous sûr de vouloir retirer cette table ?")) return;
+    if (!window.confirm("Retirer cette table ?")) return;
     try {
       await axiosInstance.post('/DaleteTabl', {
         IdEtablissement: etablissement.id,
         IdTabl: tableId,
         gerant_id: etablissement.gerant_id
       });
-      setEtablissement(prev => ({
-        ...prev,
-        tables: prev.tables.filter(table => table.id !== tableId)
-      }));
-      notify("La table a été supprimée.");
+      setEtablissement(prev => ({ ...prev, tables: prev.tables.filter(t => t.id !== tableId) }));
+      notify("Table supprimée.");
     } catch (error) {
-      console.error("Erreur de suppression:", error);
-      notify("Une erreur est survenue lors de la suppression de la table.", "error");
+      notify("Erreur de suppression.", "error");
     }
   };
 
-  // Gestionnaire global de sauvegarde
-  const handleSave = async (e) => {
-    e.preventDefault();
-    if (editType === 'etablissement') {
-      handleEditSubmit();
-    } else if (editType === 'tabl') {
-      editTable(editData.IdTabl);
-    }
-  };
-
-  // 6. Ajouter une image
+  // ================= LOGIC: GALERIE (IMAGES) =================
   const handleAddImageSubmit = async (e) => {
     e.preventDefault();
     if (!newImage.file) return notify("Veuillez sélectionner une image.", "error");
-    
     const formData = new FormData();
     formData.append('nom_image', newImage.file);
     formData.append('est_principale', "0");
     formData.append('etablissement_id', etablissement.id);
 
     try {
-      await axiosInstance.post('/AddImage', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
+      await axiosInstance.post('/AddImage', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
       fetchDetails(); 
       setShowAddImageModal(false);
       setNewImage({ file: null });
-      notify("L'image a été ajoutée à la galerie.");
+      notify("Image ajoutée à la galerie.");
     } catch (error) {
-      console.error("Erreur ajout image:", error);
-      notify("Une erreur est survenue lors du téléchargement de l'image.", "error");
+      notify("Erreur d'upload.", "error");
     }
   };
 
-  // 7. Supprimer une image
   const supprimerImage = async (imageId) => {
-    if (!window.confirm("Êtes-vous sûr de vouloir supprimer cette image de la galerie ?")) return;
+    if (!window.confirm("Supprimer cette image ?")) return;
     try {
       await axiosInstance.post('/DaleteImage', {
         IdEtablissement: etablissement.id,
         IdImage: imageId,
         gerant_id: etablissement.gerant_id
       });
-      setEtablissement(prev => ({
-        ...prev,
-        images: prev.images.filter(img => img.id !== imageId)
-      }));
-      notify("L'image a été retirée.");
+      setEtablissement(prev => ({ ...prev, images: prev.images.filter(img => img.id !== imageId) }));
+      notify("Image retirée.");
     } catch (error) {
-      console.error("Erreur suppression image:", error);
-      notify("Une erreur est survenue lors de la suppression de l'image.", "error");
+      notify("Erreur de suppression.", "error");
     }
   };
 
-  // 8. Rendre une image Principale (Cover)
   const setMainImage = async (imageId) => {
-    if (!window.confirm("Voulez-vous définir cette image comme couverture principale ?")) return;
+    if (!window.confirm("Définir comme couverture ?")) return;
     try {
       await axiosInstance.post('/EditImage', {
         IdEtablissement: etablissement.id,
         IdImage: imageId,
         gerant_id: etablissement.gerant_id
       });
-
       setEtablissement(prev => ({
         ...prev,
-        images: prev.images.map(img => ({
-          ...img,
-          est_principale: img.id === imageId ? 1 : 0
-        }))
+        images: prev.images.map(img => ({ ...img, est_principale: img.id === imageId ? 1 : 0 }))
       }));
-      notify("L'image principale a été mise à jour.");
+      notify("Couverture mise à jour.");
     } catch (error) {
-      console.error("Erreur mise à jour image principale:", error);
-      notify("Une erreur est survenue lors du changement de l'image principale.", "error");
+      notify("Erreur de mise à jour.", "error");
     }
   };
 
-  // 9. Ajouter une Catégorie
+  // ================= LOGIC: CATÉGORIES =================
   const handleAddCategorySubmit = async (e) => {
     e.preventDefault();
-    if (!newCategory.nom.trim()) return notify("Le nom de la catégorie est requis.", "error");
-    
+    if (!newCategory.nom.trim()) return notify("Le nom est requis.", "error");
     try {
-      await axiosInstance.post('/AddCategorie', {
-        etablissement_id: etablissement.id,
-        nom: newCategory.nom
-      });
+      await axiosInstance.post('/AddCategorie', { etablissement_id: etablissement.id, nom: newCategory.nom });
       fetchDetails(); 
       setShowAddCategoryModal(false);
       setNewCategory({ nom: '' });
-      notify("La catégorie a été ajoutée avec succès.");
+      notify("Catégorie ajoutée.");
     } catch (error) {
-       if (error.response?.status === 422) {
-          const errorMessages = error.response.data.errors;
-          if (errorMessages?.nom) {
-            notify(errorMessages.nom[0], "error"); 
-          } else {
-            notify(error.response.data.message || "Les données fournies sont invalides.", "error");
-          }
-      } else {
-        console.error("Erreur ajout catégorie:", error);
-        notify("Erreur de connexion au serveur.", "error");
-      }
+      notify(error.response?.data?.message || "Données invalides.", "error");
     }
   };
 
-  // 10. Supprimer une Catégorie
   const supprimerCategorie = async (categorieId) => {
-    if (!window.confirm("Êtes-vous sûr de vouloir supprimer cette catégorie ?")) return;
+    if (!window.confirm("Supprimer cette catégorie ?")) return;
     try {
-      await axiosInstance.post('/DeletCategorie', {
-        IdEtablissement: etablissement.id,
-        IdCategorie: categorieId
-      });
-      
-      // Si la catégorie supprimée était active, on revient sur "all"
-      if (activeCategory === categorieId) {
-        setActiveCategory('all');
-      }
+      await axiosInstance.post('/DeletCategorie', { IdEtablissement: etablissement.id, IdCategorie: categorieId });
+      if (String(activeCategory) === String(categorieId)) setActiveCategory('all');
+      setEtablissement(prev => ({ ...prev, categories: prev.categories.filter(cat => cat.id !== categorieId) }));
+      notify("Catégorie supprimée.");
+    } catch (error) {
+      notify("Erreur de suppression.", "error");
+    }
+  };
 
+  // ================= LOGIC: PRODUITS =================
+  const handleProductSubmit = async (e) => {
+    e.preventDefault();
+    const isEditing = Boolean(productData.IdProduit);
+    const payload = {
+      etablissement_id: etablissement.id,
+      categorie_id: Number(productData.categorie_id),
+      nom: productData.nom.trim(),
+      description: productData.description.trim() || null,
+      prix: Number(productData.prix)
+    };
+
+    try {
+      const response = await axiosInstance.post(
+        isEditing ? '/EditProduit' : '/AddProduit',
+        isEditing ? { ...payload, IdProduit: productData.IdProduit } : payload
+      );
+      
+      const produit = response.data.produit;
       setEtablissement(prev => ({
         ...prev,
-        categories: prev.categories.filter(cat => cat.id !== categorieId)
+        produits: isEditing
+          ? prev.produits.map(item => item.id === produit.id ? produit : item)
+          : [...(prev.produits || []), produit].sort((a, b) => a.nom.localeCompare(b.nom))
       }));
-      notify("La catégorie a été supprimée avec succès.");
+      
+      setShowProductModal(false);
+      notify(isEditing ? "Produit modifié." : "Produit ajouté.");
     } catch (error) {
-      console.error("Erreur suppression catégorie:", error);
-      notify("Une erreur est survenue lors de la suppression de la catégorie.", "error");
+      notify(error.response?.data?.message || "Erreur produit.", "error");
     }
   };
 
-  // ================= RENDU =================
+  const supprimerProduit = async (produitId) => {
+    if (!window.confirm("Supprimer ce produit ?")) return;
+    try {
+      await axiosInstance.post('/DeletProduit', { IdEtablissement: etablissement.id, IdProduit: produitId });
+      setEtablissement(prev => ({ ...prev, produits: prev.produits.filter(p => p.id !== produitId) }));
+      notify("Produit supprimé.");
+    } catch (error) {
+      notify("Erreur de suppression.", "error");
+    }
+  };
+
+  const openProductModal = (produit = null) => {
+    setProductData(produit ? {
+      IdProduit: produit.id,
+      nom: produit.nom,
+      description: produit.description || '',
+      prix: produit.prix,
+      categorie_id: produit.categorie_id
+    } : {
+      IdProduit: null,
+      nom: '',
+      description: '',
+      prix: '',
+      categorie_id: activeCategory !== 'all' ? activeCategory : (categoriesList[0]?.id || '')
+    });
+    setShowProductModal(true);
+  };
+
+  // ================= LOGIC: IMAGES PRODUITS =================
+  const openProductImageModal = (produit) => {
+    setSelectedProduct(produit);
+    setProductImage(null);
+    setShowProductImageModal(true);
+  };
+
+  const handleProductImageSubmit = async (e) => {
+    e.preventDefault();
+    if (!productImage) return notify("Sélectionnez une image.", "error");
+
+    const formData = new FormData();
+    formData.append('produit_id', selectedProduct.id);
+    formData.append('est_principale', '0');
+    formData.append('nom_image', productImage);
+
+    try {
+      const response = await axiosInstance.post('/AddProduitImage', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+      const image = response.data.image;
+      
+      setEtablissement(prev => ({
+        ...prev,
+        produits: prev.produits.map(p => p.id === selectedProduct.id
+          ? { ...p, produit_images: [...(p.produit_images || []).map(i => ({ ...i, est_principale: 0 })), image] }
+          : p)
+      }));
+      
+      setSelectedProduct(prev => prev ? { ...prev, produit_images: [...(prev.produit_images || []), image] } : prev);
+      setShowProductImageModal(false);
+      setProductImage(null);
+      notify("Image ajoutée au produit.");
+    } catch (error) {
+      notify("Erreur d'upload.", "error");
+    }
+  };
+
+  const supprimerImageProduit = async (produit, imageId) => {
+    if (!window.confirm("Supprimer cette image ?")) return;
+    try {
+      await axiosInstance.post('/DeletProduitImage', { IdProduit: produit.id, IdImage: imageId });
+      setEtablissement(prev => ({
+        ...prev,
+        produits: prev.produits.map(p => p.id === produit.id ? { ...p, produit_images: p.produit_images.filter(i => i.id !== imageId) } : p)
+      }));
+      setSelectedProduct(prev => prev ? { ...prev, produit_images: prev.produit_images.filter(i => i.id !== imageId) } : prev);
+      notify("Image supprimée.");
+    } catch (error) {
+      notify("Erreur de suppression.", "error");
+    }
+  };
+
+  const setMainImageProduit = async (produit, imageId) => {
+    try {
+      await axiosInstance.post('/EditProduitImage', { IdProduit: produit.id, IdImage: imageId });
+      const updateImages = images => images.map(i => ({ ...i, est_principale: i.id === imageId ? 1 : 0 }));
+      
+      setEtablissement(prev => ({
+        ...prev,
+        produits: prev.produits.map(p => p.id === produit.id ? { ...p, produit_images: updateImages(p.produit_images || []) } : p)
+      }));
+      setSelectedProduct(prev => prev ? { ...prev, produit_images: updateImages(prev.produit_images || []) } : prev);
+      notify("Cover du produit mis à jour.");
+    } catch (error) {
+      notify("Erreur de mise à jour.", "error");
+    }
+  };
+
+  // ================= RENDER DE BASE =================
   if (loading) {
-    return (
-      <div className="flex justify-center items-center min-h-screen bg-gray-50">
-        <span className="material-symbols-outlined animate-spin text-teal-500 text-5xl">autorenew</span>
-      </div>
-    );
+    return <div className="flex justify-center items-center min-h-screen bg-gray-50"><span className="material-symbols-outlined animate-spin text-teal-500 text-5xl">autorenew</span></div>;
   }
 
   if (!etablissement) {
     return (
       <div className="bg-gray-50 min-h-screen font-sans text-gray-900 pb-12">
         <Navbar />
-        <div className="max-w-4xl mx-auto px-6 pt-32 text-center">
-          <div className="bg-white rounded-3xl shadow-sm border border-gray-200 p-16">
+        <div className="max-w-4xl mx-auto px-4 pt-32 text-center">
+          <div className="bg-white rounded-3xl shadow-sm border border-gray-200 p-8 sm:p-16">
             <span className="material-symbols-outlined text-teal-500 text-6xl mb-4">storefront</span>
-            <h2 className="text-2xl font-bold text-gray-800">Bienvenue dans votre espace !</h2>
-            <p className="text-gray-500 mt-2 mb-8">Créez votre premier restaurant pour commencer à gérer vos commandes.</p>
-            <button 
-              onClick={() => navigate('/addEtablissment')}
-              className="bg-teal-600 hover:bg-teal-700 text-white px-8 py-3 rounded-xl font-bold inline-flex items-center gap-2 shadow-md transition-all"
-            >
-              <span className="material-symbols-outlined">add</span>
-              Ajouter mon restaurant
+            <h2 className="text-xl sm:text-2xl font-bold text-gray-800">Bienvenue dans votre espace !</h2>
+            <p className="text-gray-500 mt-2 mb-8 text-sm sm:text-base">Créez votre premier restaurant pour commencer à gérer vos commandes.</p>
+            <button onClick={() => navigate('/addEtablissment')} className="bg-teal-600 hover:bg-teal-700 text-white px-6 py-3 rounded-full font-bold inline-flex items-center gap-2 shadow-md transition-all w-full sm:w-auto justify-center">
+              <span className="material-symbols-outlined">add</span> Ajouter mon restaurant
             </button>
           </div>
         </div>
@@ -348,209 +404,164 @@ export default function DashboardGarant() {
     <div className="bg-gray-50 min-h-screen pb-12 font-sans text-gray-900 relative">
       <Navbar />
 
-      {/* ================= CONTENEUR DES NOTIFICATIONS TOAST ================= */}
-      <div className="fixed top-20 right-6 z-[9999] flex flex-col gap-3 pointer-events-none">
+      {/* TOASTS */}
+      <div className="fixed top-20 right-4 sm:right-6 z-[9999] flex flex-col gap-3 pointer-events-none w-[calc(100%-2rem)] sm:w-auto">
         {notifications.map((n) => (
-          <div 
-            key={n.id} 
-            className={`flex items-center gap-3 px-5 py-4 rounded-xl shadow-lg transform transition-all duration-300 translate-y-0 opacity-100 min-w-[300px] pointer-events-auto
-              ${n.type === 'success' ? 'bg-green-50 border border-green-200 text-green-800' : 'bg-red-50 border border-red-200 text-red-800'}`}
-          >
-            <span className="material-symbols-outlined">
-              {n.type === 'success' ? 'check_circle' : 'error'}
-            </span>
+          <div key={n.id} className={`flex items-center gap-3 px-4 sm:px-5 py-3 sm:py-4 rounded-xl shadow-lg transition-all duration-300 min-w-full sm:min-w-[300px] pointer-events-auto ${n.type === 'success' ? 'bg-green-50 border border-green-200 text-green-800' : 'bg-red-50 border border-red-200 text-red-800'}`}>
+            <span className="material-symbols-outlined shrink-0">{n.type === 'success' ? 'check_circle' : 'error'}</span>
             <p className="text-sm font-semibold">{n.message}</p>
           </div>
         ))}
       </div>
       
-      {/* EN-TÊTE & COUVERTURE */}
-      <div className="relative w-full h-72 bg-teal-900 mt-[64px]">
+      {/* HEADER & COVER RESPONSIVE FIX */}
+      <div className="relative w-full h-[400px] sm:h-72 bg-gray-900 mt-[80px]">
         {mainImage ? (
-          <img 
-            src={getImageUrl(mainImage.nom_image)} 
-            alt="Cover" 
-            className="w-full h-full object-cover opacity-50 transition-all duration-500"
-          />
+          <img src={getImageUrl(mainImage.nom_image)} alt="Cover" className="w-full h-full object-cover opacity-60" />
         ) : (
           <div className="w-full h-full flex items-center justify-center opacity-30">
             <span className="material-symbols-outlined text-white text-6xl">restaurant</span>
           </div>
         )}
         
-        <div className="absolute inset-0 bg-gradient-to-t from-gray-900/90 via-gray-900/40 to-transparent flex items-end">
-          <div className="max-w-6xl mx-auto px-6 pb-8 w-full flex justify-between items-end">
-            <div className="text-white">
-              <span className={`text-xs font-bold px-3 py-1.5 rounded shadow-sm flex items-center gap-1 w-max mb-3 uppercase ${etablissement.statut === 'acceptee' ? 'bg-green-500' : 'bg-amber-500'}`}>
+        <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/40 to-transparent flex items-end">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-6 sm:pb-8 w-full flex flex-col sm:flex-row justify-between items-start sm:items-end gap-6">
+            <div className="text-white w-full sm:w-auto">
+              <span className={`text-[10px] sm:text-xs font-bold px-3 py-1.5 rounded shadow-sm flex items-center gap-1 w-max mb-3 uppercase ${etablissement.statut === 'acceptee' ? 'bg-green-500' : 'bg-amber-500'}`}>
                 <span className="material-symbols-outlined text-[14px]">
                   {etablissement.statut === 'acceptee' ? 'check_circle' : 'pending'}
                 </span> 
                 {etablissement.statut?.replace('_', ' ')}
               </span>
-              
-              <h1 className="text-4xl md:text-5xl font-extrabold">{etablissement.nom}</h1>
-              <p className="text-gray-200 mt-2 flex items-center gap-2 text-lg">
-                <span className="material-symbols-outlined text-[20px]">location_on</span>
+              <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold leading-tight break-words">{etablissement.nom}</h1>
+              <p className="text-gray-200 mt-2 flex items-center gap-2 text-sm sm:text-lg">
+                <span className="material-symbols-outlined text-[18px] sm:text-[20px]">location_on</span>
                 {etablissement.ville}
               </p>
             </div>
-            
-            <div className="flex gap-2">
-              <button 
-                onClick={supprimerEtablissement}
-                className="bg-red-600 text-white px-4 py-2.5 rounded-xl font-bold flex items-center gap-2 hover:bg-red-700 shadow-lg transition-all"
-              >
-                <span className="material-symbols-outlined text-[20px]">delete</span>
-                Supprimer l'établissement
-              </button>
-            </div>
+            <button onClick={supprimerEtablissement} className="bg-red-600 text-white px-4 py-2.5 rounded-full font-bold flex items-center justify-center gap-2 hover:bg-red-700 shadow-lg transition-all w-full sm:w-auto">
+              <span className="material-symbols-outlined text-[20px]">delete</span>
+              Supprimer
+            </button>
           </div>
         </div>
       </div>
 
-      {/* GRILLE PRINCIPALE DU TABLEAU DE BORD */}
-      <div className="max-w-6xl mx-auto px-6 mt-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
+      {/* MAIN CONTENT GRID */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6 sm:mt-8 grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
         
-        {/* COLONNE GAUCHE */}
-        <div className="lg:col-span-2 space-y-8">
+        {/* LEFT COLUMN */}
+        <div className="lg:col-span-2 space-y-6 sm:space-y-8">
           
-          {/* Informations */}
-          <section className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold flex items-center gap-2">
-                <span className="material-symbols-outlined text-teal-600">info</span>
-                Informations
+          {/* INFORMATIONS */}
+          <section className="bg-white p-5 sm:p-6 rounded-2xl shadow-sm border border-gray-100">
+            <div className="flex flex-wrap justify-between items-center mb-4 gap-4">
+              <h2 className="text-lg sm:text-xl font-bold flex items-center gap-2">
+                <span className="material-symbols-outlined text-teal-600">info</span> Informations
               </h2>
-              <button 
-                onClick={() => {
-                  setEditType('etablissement');
-                  setEditData({
-                    nom: etablissement.nom,
-                    description: etablissement.description,
-                    adresse: etablissement.adresse,
-                    ville: etablissement.ville,
-                    telephone: etablissement.telephone
-                  });
-                  setShowEditModal(true);
-              }}
-                className="text-teal-600 bg-teal-50 px-3 py-1.5 rounded-lg text-sm font-bold flex items-center gap-1 hover:bg-teal-100 transition-colors"
-              >
-                <span className="material-symbols-outlined text-[18px]">edit</span>
-                Modifier
+              <button onClick={() => { setEditType('etablissement'); setEditData({ nom: etablissement.nom, description: etablissement.description, adresse: etablissement.adresse, ville: etablissement.ville, telephone: etablissement.telephone }); setShowEditModal(true); }} className="text-teal-700 bg-teal-50 px-4 py-2 rounded-full text-xs sm:text-sm font-bold flex items-center gap-1 hover:bg-teal-100 transition-colors w-full sm:w-auto justify-center">
+                <span className="material-symbols-outlined text-[18px]">edit</span> Modifier
               </button>
             </div>
-            <p className="text-gray-600 mb-5">{etablissement.description}</p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="flex items-center gap-3 bg-gray-50 p-3 rounded-lg border border-gray-100">
-                <span className="material-symbols-outlined text-gray-400">map</span>
-                <span className="text-sm font-medium text-gray-700">{etablissement.adresse}</span>
+            <p className="text-sm sm:text-base text-gray-600 mb-5 leading-relaxed">{etablissement.description}</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+              <div className="flex items-center gap-3 bg-gray-50 p-3 sm:p-4 rounded-xl border border-gray-100">
+                <span className="material-symbols-outlined text-gray-400 shrink-0">map</span>
+                <span className="text-sm font-medium text-gray-700 break-words">{etablissement.adresse}</span>
               </div>
-              <div className="flex items-center gap-3 bg-gray-50 p-3 rounded-lg border border-gray-100">
-                <span className="material-symbols-outlined text-gray-400">call</span>
+              <div className="flex items-center gap-3 bg-gray-50 p-3 sm:p-4 rounded-xl border border-gray-100">
+                <span className="material-symbols-outlined text-gray-400 shrink-0">call</span>
                 <span className="text-sm font-medium text-gray-700">{etablissement.telephone}</span>
               </div>
             </div>
           </section>
 
-          {/* ================= SECTION MENU (Onglets de Catégories & Plats) ================= */}
-          <section className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-            {/* En-tête du Menu */}
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-bold flex items-center gap-2">
-                <span className="material-symbols-outlined text-teal-600">restaurant_menu</span>
-                Menu
+          {/* MENU & CATEGORIES & PRODUITS */}
+          <section className="bg-white p-5 sm:p-6 rounded-2xl shadow-sm border border-gray-100">
+            <div className="flex flex-wrap justify-between items-center mb-6 gap-4">
+              <h2 className="text-lg sm:text-xl font-bold flex items-center gap-2">
+                <span className="material-symbols-outlined text-teal-600">restaurant_menu</span> Menu
               </h2>
-              
-              <button 
-                onClick={() => setShowAddCategoryModal(true)}
-                className="bg-teal-50 text-teal-600 px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-1 hover:bg-teal-100 shadow-sm transition-colors"
-              >
-                <span className="material-symbols-outlined text-[18px]">category</span>
-                Nouvelle Catégorie
+              <button onClick={() => setShowAddCategoryModal(true)} className="bg-teal-50 text-teal-700 px-4 py-2 rounded-full text-xs sm:text-sm font-bold flex items-center gap-1 hover:bg-teal-100 transition-colors w-full sm:w-auto justify-center">
+                <span className="material-symbols-outlined text-[18px]">category</span> Nouvelle Catégorie
               </button>
             </div>
             
-            {/* Barre des Catégories (Onglets avec bouton Delete) */}
-            <div className="flex flex-wrap gap-2 mb-6 p-1 bg-gray-50 rounded-xl border border-gray-100">
+            {/* TABS (SCROLLABLE ON MOBILE) */}
+            <div className="flex overflow-x-auto gap-2 mb-6 pb-2 -mx-2 px-2 sm:mx-0 sm:px-0 scrollbar-hide">
               <button 
                 onClick={() => setActiveCategory('all')}
-                className={`px-4 py-2 rounded-lg text-sm font-bold transition-all duration-200 ${
-                  activeCategory === 'all' 
-                    ? 'bg-white text-teal-600 shadow-sm border border-gray-200' 
-                    : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
-                }`}
+                className={`whitespace-nowrap px-4 py-2 rounded-full text-sm font-bold transition-all shrink-0 ${activeCategory === 'all' ? 'bg-teal-600 text-white shadow-sm' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
               >
-                Toutes les catégories
+                Toutes
               </button>
               
               {categoriesList.map(cat => (
-                <div 
-                  key={cat.id} 
-                  className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-bold transition-all duration-200 border ${
-                    activeCategory === cat.id 
-                      ? 'bg-white text-teal-600 shadow-sm border-gray-200' 
-                      : 'bg-white/50 text-gray-500 border-gray-100 hover:bg-gray-100'
-                  }`}
-                >
-                  <button onClick={() => setActiveCategory(cat.id)} className="outline-none">
+                <div key={cat.id} className={`flex items-center gap-1 px-4 py-2 rounded-full text-sm font-bold transition-all shrink-0 border ${String(activeCategory) === String(cat.id) ? 'bg-teal-600 text-white border-teal-600 shadow-sm' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'}`}>
+                  <button onClick={() => setActiveCategory(cat.id)} className="outline-none whitespace-nowrap">
                     {cat.nom}
                   </button>
-                  <button 
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      supprimerCategorie(cat.id);
-                    }}
-                    title="Supprimer la catégorie"
-                    className="text-gray-400 hover:text-red-500 p-1 ml-1 rounded-full transition-colors"
-                  >
-                    <span className="material-symbols-outlined text-[14px]">close</span>
+                  <button onClick={(e) => { e.stopPropagation(); supprimerCategorie(cat.id); }} className={`p-1 ml-1 rounded-full transition-colors ${String(activeCategory) === String(cat.id) ? 'text-teal-200 hover:text-white hover:bg-teal-700' : 'text-gray-400 hover:text-red-500 hover:bg-red-50'}`}>
+                    <span className="material-symbols-outlined text-[14px] flex">close</span>
                   </button>
                 </div>
               ))}
             </div>
 
-            {/* Titre de la Catégorie Active & Bouton Nouveau plat */}
-            <div className="flex justify-between items-center mb-4 pb-4 border-b border-gray-100">
-              <h3 className="font-bold text-gray-800 text-lg flex items-center gap-2">
-                {activeCategory === 'all' ? 'Tous les plats' : categoriesList.find(c => c.id === activeCategory)?.nom}
-                <span className="bg-gray-100 text-gray-600 text-xs px-2 py-1 rounded-md">
-                  {displayedProducts?.length || 0}
-                </span>
+            {/* HEADER PRODUITS */}
+            <div className="flex flex-wrap justify-between items-center mb-4 pb-4 border-b border-gray-100 gap-4">
+              <h3 className="font-bold text-gray-800 text-base sm:text-lg flex items-center gap-2">
+                {activeCategory === 'all' ? 'Tous les plats' : categoriesList.find(c => String(c.id) === String(activeCategory))?.nom}
+                <span className="bg-gray-100 text-gray-600 text-xs px-2 py-1 rounded-md">{displayedProducts?.length || 0}</span>
               </h3>
-              
-              <button className="bg-teal-600 text-white px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-1 hover:bg-teal-700 shadow-sm transition-colors">
-                <span className="material-symbols-outlined text-[18px]">add</span>
-                Nouveau plat {activeCategory !== 'all' && 'dans cette catégorie'}
+              <button onClick={() => openProductModal()} className="bg-teal-600 text-white px-4 py-2 rounded-full text-xs sm:text-sm font-bold flex items-center gap-1 hover:bg-teal-700 shadow-sm transition-colors w-full sm:w-auto justify-center">
+                <span className="material-symbols-outlined text-[18px]">add</span> Nouveau plat
               </button>
             </div>
             
-            {/* Liste des produits filtrés */}
+            {/* LISTE DES PRODUITS */}
             <div className="space-y-4">
               {displayedProducts?.length > 0 ? (
                 displayedProducts.map((prod) => (
-                  <div key={prod.id} className="flex gap-4 p-4 border border-gray-100 rounded-xl hover:shadow-md transition-shadow bg-gray-50/50">
-                    <div className="w-20 h-20 bg-gray-200 rounded-lg overflow-hidden flex-shrink-0">
+                  <div key={prod.id} className="flex flex-col sm:flex-row gap-4 p-4 border border-gray-100 rounded-xl hover:shadow-md transition-shadow bg-gray-50/50">
+                    <div className="w-full sm:w-28 h-48 sm:h-28 bg-gray-200 rounded-lg overflow-hidden shrink-0 relative">
                       {prod.produit_images?.[0] ? (
-                        <img src={getImageUrl(prod.produit_images[0].nom_image)} alt={prod.nom} className="w-full h-full object-cover" />
+                        <img src={getImageUrl((prod.produit_images.find(image => image.est_principale) || prod.produit_images[0]).nom_image)} alt={prod.nom} className="w-full h-full object-cover" />
                       ) : (
-                        <span className="material-symbols-outlined w-full h-full flex justify-center items-center text-gray-400">fastfood</span>
+                        <span className="material-symbols-outlined w-full h-full flex justify-center items-center text-gray-400 text-3xl">fastfood</span>
                       )}
                     </div>
-                    <div className="flex-1">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <h3 className="font-bold text-gray-900">{prod.nom}</h3>
-                          {prod.categorie && activeCategory === 'all' && (
-                            <span className="text-[10px] uppercase font-bold bg-teal-50 text-teal-700 px-2 py-0.5 rounded mt-1 inline-block">
-                              {prod.categorie.nom}
-                            </span>
-                          )}
+                    
+                    <div className="flex-1 flex flex-col justify-between">
+                      <div>
+                        <div className="flex flex-wrap justify-between items-start gap-2 mb-1">
+                          <div>
+                            <h3 className="font-bold text-gray-900 text-sm sm:text-base">{prod.nom}</h3>
+                            {prod.categorie && activeCategory === 'all' && (
+                              <span className="text-[10px] uppercase font-bold bg-teal-50 text-teal-700 px-2 py-0.5 rounded mt-1 inline-block">
+                                {prod.categorie.nom}
+                              </span>
+                            )}
+                          </div>
+                          <span className="font-extrabold text-amber-600 bg-amber-50 px-2 py-1 rounded-md text-sm border border-amber-100">
+                            {Number(prod.prix).toFixed(2)} DH
+                          </span>
                         </div>
-                        <span className="font-extrabold text-amber-600 bg-white border border-amber-100 px-2 py-1 rounded-md shadow-sm">
-                          {Number(prod.prix).toFixed(2)} DH
-                        </span>
+                        <p className="text-xs sm:text-sm text-gray-500 mt-2 line-clamp-2">{prod.description}</p>
                       </div>
-                      <p className="text-xs text-gray-500 mt-2 line-clamp-2">{prod.description}</p>
+                      
+                      {/* ACTION BUTTONS PRODUITS */}
+                      <div className="flex items-center gap-2 mt-4 pt-3 border-t border-gray-100 justify-end">
+                        <button onClick={() => openProductImageModal(prod)} title="Gérer l'image" className="text-gray-500 hover:text-teal-600 bg-white border border-gray-200 px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1 shadow-sm transition-colors">
+                          <span className="material-symbols-outlined text-[16px]">add_a_photo</span> Image
+                        </button>
+                        <button onClick={() => openProductModal(prod)} title="Modifier" className="text-gray-500 hover:text-teal-600 bg-white border border-gray-200 p-1.5 rounded-lg shadow-sm transition-colors">
+                          <span className="material-symbols-outlined text-[18px] flex">edit</span>
+                        </button>
+                        <button onClick={() => supprimerProduit(prod.id)} title="Supprimer" className="text-gray-500 hover:text-red-500 bg-white border border-gray-200 p-1.5 rounded-lg shadow-sm transition-colors">
+                          <span className="material-symbols-outlined text-[18px] flex">delete</span>
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ))
@@ -562,87 +573,41 @@ export default function DashboardGarant() {
               )}
             </div>
           </section>
-
-          {/* Avis Clients */}
-          <section className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-            <h2 className="text-xl font-bold flex items-center gap-2 mb-6">
-              <span className="material-symbols-outlined text-amber-500">star</span>
-              Avis Clients ({etablissement.reviews?.length || 0})
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {etablissement.reviews?.length > 0 ? (
-                etablissement.reviews.map(rev => (
-                  <div key={rev.id} className="p-4 bg-amber-50/30 rounded-xl border border-amber-100">
-                    <div className="flex justify-between items-center mb-2">
-                      <span className="font-bold text-sm text-gray-800">{rev.client?.name || "Client"}</span>
-                      <span className="text-amber-500 text-xs font-bold flex items-center gap-0.5 bg-white px-2 py-1 rounded shadow-sm border border-amber-50">
-                        <span className="material-symbols-outlined text-[14px]">star</span> {rev.note}/5
-                      </span>
-                    </div>
-                    <p className="text-xs text-gray-600 italic">"{rev.commentaire}"</p>
-                  </div>
-                ))
-              ) : (
-                <p className="col-span-full text-center py-6 text-gray-500 text-sm border border-dashed rounded-xl">Aucun avis pour le moment.</p>
-              )}
-            </div>
-          </section>
-
         </div>
 
-        {/* COLONNE DROITE */}
-        <div className="space-y-8">
+        {/* RIGHT COLUMN */}
+        <div className="space-y-6 sm:space-y-8">
           
-          {/* Galerie Photos */}
-          <section className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+          {/* GALERIE */}
+          <section className="bg-white p-5 sm:p-6 rounded-2xl shadow-sm border border-gray-100">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-lg font-bold flex items-center gap-2">
-                <span className="material-symbols-outlined text-teal-600">photo_library</span>
-                Galerie
+                <span className="material-symbols-outlined text-teal-600">photo_library</span> Galerie
               </h2>
-              <button 
-                onClick={() => setShowAddImageModal(true)}
-                className="text-teal-600 bg-teal-50 p-2 rounded-lg hover:bg-teal-100 transition-colors"
-              >
-                <span className="material-symbols-outlined text-[20px]">add_a_photo</span>
+              <button onClick={() => setShowAddImageModal(true)} className="text-teal-700 bg-teal-50 p-2 rounded-full hover:bg-teal-100 transition-colors">
+                <span className="material-symbols-outlined text-[20px] flex">add_a_photo</span>
               </button>
             </div>
             
             {etablissement.images?.length > 0 ? (
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-2 sm:gap-3">
                 {etablissement.images.map(img => (
                   <div key={img.id} className="relative aspect-square rounded-xl overflow-hidden group shadow-sm border border-gray-100 bg-gray-100">
                     <img src={getImageUrl(img.nom_image)} alt="gallery" className="w-full h-full object-cover" />
-                    
-                    {/* Survol (Overlay) */}
-                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex justify-center items-center gap-2">
-                      
-                      {/* Bouton Étoile (Cover) */}
-                      {img.est_principale !== 1 && (
-                        <button 
-                          onClick={() => setMainImage(img.id)}
-                          title="Définir comme Cover"
-                          className="text-white hover:text-amber-400 bg-black/40 p-2 rounded-full backdrop-blur-sm transition-colors"
-                        >
-                          <span className="material-symbols-outlined text-[18px]">star</span>
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent sm:opacity-0 sm:group-hover:opacity-100 transition-opacity flex flex-col justify-end p-2 gap-2">
+                      <div className="flex justify-end gap-2">
+                        {img.est_principale !== 1 && (
+                          <button onClick={() => setMainImage(img.id)} className="text-white bg-black/50 p-1.5 rounded-full hover:bg-amber-500 transition-colors backdrop-blur-sm">
+                            <span className="material-symbols-outlined text-[16px] flex">star</span>
+                          </button>
+                        )}
+                        <button onClick={() => supprimerImage(img.id)} className="text-white bg-black/50 p-1.5 rounded-full hover:bg-red-500 transition-colors backdrop-blur-sm">
+                          <span className="material-symbols-outlined text-[16px] flex">delete</span>
                         </button>
-                      )}
-
-                      {/* Bouton Supprimer */}
-                      <button 
-                        onClick={() => supprimerImage(img.id)}
-                        title="Supprimer l'image"
-                        className="text-white hover:text-red-400 bg-black/40 p-2 rounded-full backdrop-blur-sm transition-colors"
-                      >
-                        <span className="material-symbols-outlined text-[18px]">delete</span>
-                      </button>
+                      </div>
                     </div>
-
-                    {/* Badge Cover */}
                     {img.est_principale === 1 && (
-                      <span className="absolute bottom-2 left-2 bg-amber-500 text-white text-[9px] font-bold px-2 py-0.5 rounded shadow-md uppercase flex items-center gap-1">
-                        <span className="material-symbols-outlined text-[10px]">star</span> Cover
-                      </span>
+                      <span className="absolute top-2 left-2 bg-amber-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-md shadow-sm">COVER</span>
                     )}
                   </div>
                 ))}
@@ -652,52 +617,33 @@ export default function DashboardGarant() {
             )}
           </section>
 
-          {/* Tables */}
-          <section className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+          {/* TABLES */}
+          <section className="bg-white p-5 sm:p-6 rounded-2xl shadow-sm border border-gray-100">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-lg font-bold flex items-center gap-2">
-                <span className="material-symbols-outlined text-teal-600">table_restaurant</span>
-                Tables ({etablissement.tables?.length || 0})
+                <span className="material-symbols-outlined text-teal-600">table_restaurant</span> Tables ({etablissement.tables?.length || 0})
               </h2>
-              <button 
-                onClick={() => setShowAddTableModal(true)}
-                className="text-teal-600 bg-teal-50 p-2 rounded-lg hover:bg-teal-100 transition-colors"
-              >
-                <span className="material-symbols-outlined text-[20px]">add</span>
+              <button onClick={() => setShowAddTableModal(true)} className="text-teal-700 bg-teal-50 p-2 rounded-full hover:bg-teal-100 transition-colors">
+                <span className="material-symbols-outlined text-[20px] flex">add</span>
               </button>
             </div>
             
             {etablissement.tables?.length > 0 ? (
               <div className="space-y-3">
                 {etablissement.tables.map(table => (
-                  <div key={table.id} className="flex justify-between items-center p-3 bg-gray-50 rounded-xl border border-gray-100 hover:shadow-sm transition-shadow">
+                  <div key={table.id} className="flex justify-between items-center p-3 sm:p-4 bg-gray-50 rounded-xl border border-gray-100">
                     <div className="flex items-center gap-3">
-                      <div className="bg-white w-10 h-10 rounded-lg shadow-sm flex justify-center items-center font-extrabold text-teal-700 border border-gray-100">
+                      <div className="bg-white w-10 h-10 rounded-lg shadow-sm flex justify-center items-center font-extrabold text-teal-700 border border-gray-100 text-sm">
                         N°{table.numero}
                       </div>
                       <span className="text-sm font-bold text-gray-600">{table.capacite} places</span>
                     </div>
-                    
                     <div className="flex gap-2">
-                      <button 
-                        onClick={() => {
-                          setEditType('tabl');
-                          setEditData({
-                            IdTabl: table.id,
-                            numero: table.numero,
-                            capacite: table.capacite,
-                          });
-                          setShowEditTableModal(true);
-                        }}
-                        className="text-gray-400 hover:text-teal-600 bg-white p-1.5 rounded-md shadow-sm border border-gray-100"
-                      >
-                        <span className="material-symbols-outlined text-[18px]">edit</span>
+                      <button onClick={() => { setEditType('tabl'); setEditData({ IdTabl: table.id, numero: table.numero, capacite: table.capacite }); setShowEditTableModal(true); }} className="text-gray-400 hover:text-teal-600 bg-white p-2 rounded-lg shadow-sm border border-gray-100">
+                        <span className="material-symbols-outlined text-[18px] flex">edit</span>
                       </button>
-                      <button 
-                        onClick={() => supprimerTable(table.id)}
-                        className="text-gray-400 hover:text-red-500 bg-white p-1.5 rounded-md shadow-sm border border-gray-100"
-                      >
-                        <span className="material-symbols-outlined text-[18px]">delete</span>
+                      <button onClick={() => supprimerTable(table.id)} className="text-gray-400 hover:text-red-500 bg-white p-2 rounded-lg shadow-sm border border-gray-100">
+                        <span className="material-symbols-outlined text-[18px] flex">delete</span>
                       </button>
                     </div>
                   </div>
@@ -710,147 +656,179 @@ export default function DashboardGarant() {
         </div>
       </div>
 
-      {/* ================= MODALS (FENÊTRES MODALES) ================= */}
+      {/* ================= MODALS (RESPONSIVE) ================= */}
 
-      {/* MODAL MODIFIER ÉTABLISSEMENT */}
+      {/* MODAL EDIT ETAB */}
       {showEditModal && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex justify-center items-center p-4">
-          <div className="bg-white p-6 rounded-2xl shadow-xl max-w-lg w-full">
+        <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm z-50 flex justify-center items-center p-4">
+          <div className="bg-white p-6 rounded-2xl shadow-xl w-full max-w-lg overflow-y-auto max-h-[90vh]">
             <h2 className="text-xl font-bold mb-4">Modifier l'établissement</h2>
-            <form onSubmit={handleSave} className="space-y-3">
-              <input type="text" placeholder="Nom" className="w-full border p-2 rounded focus:ring-2 focus:ring-teal-500 outline-none"
-                value={editData.nom || ''} onChange={e => setEditData({...editData, nom: e.target.value})} required />
-              <textarea placeholder="Description" className="w-full border p-2 rounded focus:ring-2 focus:ring-teal-500 outline-none"
-                value={editData.description || ''} onChange={e => setEditData({...editData, description: e.target.value})} required />
-              <input type="text" placeholder="Adresse" className="w-full border p-2 rounded focus:ring-2 focus:ring-teal-500 outline-none"
-                value={editData.adresse || ''} onChange={e => setEditData({...editData, adresse: e.target.value})} required />
-              <input type="text" placeholder="Ville" className="w-full border p-2 rounded focus:ring-2 focus:ring-teal-500 outline-none"
-                value={editData.ville || ''} onChange={e => setEditData({...editData, ville: e.target.value})} required />
-              <input type="text" placeholder="Téléphone" className="w-full border p-2 rounded focus:ring-2 focus:ring-teal-500 outline-none"
-                value={editData.telephone || ''} onChange={e => setEditData({...editData, telephone: e.target.value})} required />
-              
-              <div className="flex justify-end gap-2 mt-4">
-                <button type="button" onClick={() => setShowEditModal(false)} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded">Annuler</button>
-                <button type="submit" className="bg-teal-600 text-white px-4 py-2 rounded hover:bg-teal-700">Sauvegarder</button>
+            <form onSubmit={handleSave} className="space-y-4">
+              <input type="text" placeholder="Nom" className="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl focus:ring-2 focus:ring-teal-500 outline-none font-medium" value={editData.nom || ''} onChange={e => setEditData({...editData, nom: e.target.value})} required />
+              <textarea placeholder="Description" rows="3" className="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl focus:ring-2 focus:ring-teal-500 outline-none font-medium resize-none" value={editData.description || ''} onChange={e => setEditData({...editData, description: e.target.value})} required />
+              <input type="text" placeholder="Adresse" className="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl focus:ring-2 focus:ring-teal-500 outline-none font-medium" value={editData.adresse || ''} onChange={e => setEditData({...editData, adresse: e.target.value})} required />
+              <div className="grid grid-cols-2 gap-4">
+                <input type="text" placeholder="Ville" className="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl focus:ring-2 focus:ring-teal-500 outline-none font-medium" value={editData.ville || ''} onChange={e => setEditData({...editData, ville: e.target.value})} required />
+                <input type="text" placeholder="Téléphone" className="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl focus:ring-2 focus:ring-teal-500 outline-none font-medium" value={editData.telephone || ''} onChange={e => setEditData({...editData, telephone: e.target.value})} required />
+              </div>
+              <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 mt-6">
+                <button type="button" onClick={() => setShowEditModal(false)} className="px-5 py-2.5 text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-full font-bold w-full sm:w-auto transition-colors">Annuler</button>
+                <button type="submit" className="bg-teal-600 text-white px-5 py-2.5 rounded-full font-bold w-full sm:w-auto hover:bg-teal-700 shadow-md transition-colors">Sauvegarder</button>
               </div>
             </form>
           </div>
         </div>
       )}
 
-      {/* MODAL AJOUTER TABLE */}
+      {/* MODAL ADD TABLE */}
       {showAddTableModal && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex justify-center items-center p-4">
-          <div className="bg-white p-6 rounded-2xl shadow-xl max-w-sm w-full">
+        <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm z-50 flex justify-center items-center p-4">
+          <div className="bg-white p-6 rounded-2xl shadow-xl w-full max-w-sm">
             <h2 className="text-xl font-bold mb-4">Ajouter une Table</h2>
-            <form onSubmit={handleAddTableSubmit} className="space-y-3">
-              <input 
-                type="number" 
-                min="1"
-                placeholder="Numéro de table (ex: 3)" 
-                className="w-full border p-2 rounded focus:ring-2 focus:ring-teal-500 outline-none"
-                value={newTable.numero} 
-                onChange={e => setNewTable({...newTable, numero: e.target.value})} 
-                onKeyDown={(e) => { if (e.key === '-' || e.key === 'e' || e.key === '.' || e.key === '+') e.preventDefault(); }}
-                required 
-              />
-              <input 
-                type="number" 
-                min="1"
-                placeholder="Capacité (ex: 4)" 
-                className="w-full border p-2 rounded focus:ring-2 focus:ring-teal-500 outline-none"
-                value={newTable.capacite} 
-                onChange={e => setNewTable({...newTable, capacite: e.target.value})} 
-                onKeyDown={(e) => { if (e.key === '-' || e.key === 'e' || e.key === '.' || e.key === '+') e.preventDefault(); }}
-                required 
-              />
-              
-              <div className="flex justify-end gap-2 mt-4">
-                <button type="button" onClick={() => setShowAddTableModal(false)} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded">Annuler</button>
-                <button type="submit" className="bg-teal-600 text-white px-4 py-2 rounded hover:bg-teal-700">Ajouter</button>
+            <form onSubmit={handleAddTableSubmit} className="space-y-4">
+              <input type="number" min="1" placeholder="Numéro (ex: 3)" className="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl focus:ring-2 focus:ring-teal-500 outline-none font-medium" value={newTable.numero} onChange={e => setNewTable({...newTable, numero: e.target.value})} required />
+              <input type="number" min="1" placeholder="Capacité (ex: 4)" className="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl focus:ring-2 focus:ring-teal-500 outline-none font-medium" value={newTable.capacite} onChange={e => setNewTable({...newTable, capacite: e.target.value})} required />
+              <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 mt-6">
+                <button type="button" onClick={() => setShowAddTableModal(false)} className="px-5 py-2.5 text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-full font-bold w-full sm:w-auto">Annuler</button>
+                <button type="submit" className="bg-teal-600 text-white px-5 py-2.5 rounded-full font-bold w-full sm:w-auto hover:bg-teal-700 shadow-md">Ajouter</button>
               </div>
             </form>
           </div>
         </div>
       )}
 
-      {/* MODAL MODIFIER TABLE */}
+      {/* MODAL EDIT TABLE */}
       {showEditTableModal && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex justify-center items-center p-4">
-          <div className="bg-white p-6 rounded-2xl shadow-xl max-w-sm w-full">
+        <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm z-50 flex justify-center items-center p-4">
+          <div className="bg-white p-6 rounded-2xl shadow-xl w-full max-w-sm">
             <h2 className="text-xl font-bold mb-4">Modifier la Table</h2>
-            <form onSubmit={handleSave} className="space-y-3">
-              <input 
-                type="number" 
-                min="1"
-                placeholder="Numéro de table (ex: 3)" 
-                className="w-full border p-2 rounded focus:ring-2 focus:ring-teal-500 outline-none"
-                value={editData.numero || ''} 
-                onChange={e => setEditData({...editData, numero: e.target.value})} 
-                onKeyDown={(e) => { if (e.key === '-' || e.key === 'e' || e.key === '.' || e.key === '+') e.preventDefault(); }}
-                required 
-              />
-              <input 
-                type="number" 
-                min="1"
-                placeholder="Capacité (ex: 4)" 
-                className="w-full border p-2 rounded focus:ring-2 focus:ring-teal-500 outline-none"
-                value={editData.capacite || ''} 
-                onChange={e => setEditData({...editData, capacite: e.target.value})} 
-                onKeyDown={(e) => { if (e.key === '-' || e.key === 'e' || e.key === '.' || e.key === '+') e.preventDefault(); }}
-                required 
-              />
-              
-              <div className="flex justify-end gap-2 mt-4">
-                <button type="button" onClick={() => setShowEditTableModal(false)} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded">Annuler</button>
-                <button type="submit" className="bg-teal-600 text-white px-4 py-2 rounded hover:bg-teal-700">Sauvegarder</button>
+            <form onSubmit={handleSave} className="space-y-4">
+              <input type="number" min="1" placeholder="Numéro" className="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl focus:ring-2 focus:ring-teal-500 outline-none font-medium" value={editData.numero || ''} onChange={e => setEditData({...editData, numero: e.target.value})} required />
+              <input type="number" min="1" placeholder="Capacité" className="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl focus:ring-2 focus:ring-teal-500 outline-none font-medium" value={editData.capacite || ''} onChange={e => setEditData({...editData, capacite: e.target.value})} required />
+              <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 mt-6">
+                <button type="button" onClick={() => setShowEditTableModal(false)} className="px-5 py-2.5 text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-full font-bold w-full sm:w-auto">Annuler</button>
+                <button type="submit" className="bg-teal-600 text-white px-5 py-2.5 rounded-full font-bold w-full sm:w-auto hover:bg-teal-700 shadow-md">Sauvegarder</button>
               </div>
             </form>
           </div>
         </div>
       )}
 
-      {/* MODAL AJOUTER IMAGE */}
+      {/* MODAL ADD IMAGE (GALERIE) */}
       {showAddImageModal && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex justify-center items-center p-4">
-          <div className="bg-white p-6 rounded-2xl shadow-xl max-w-sm w-full">
+        <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm z-50 flex justify-center items-center p-4">
+          <div className="bg-white p-6 rounded-2xl shadow-xl w-full max-w-sm">
             <h2 className="text-xl font-bold mb-4">Ajouter une Photo</h2>
-            <form onSubmit={handleAddImageSubmit} className="space-y-3">
-              <input type="file" accept="image/*" className="w-full border p-2 rounded focus:ring-2 focus:ring-teal-500 outline-none"
-                onChange={e => setNewImage({ file: e.target.files[0] })} required />
-              
-              <div className="flex justify-end gap-2 mt-6">
-                <button type="button" onClick={() => setShowAddImageModal(false)} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded">Annuler</button>
-                <button type="submit" className="bg-teal-600 text-white px-4 py-2 rounded hover:bg-teal-700">Uploader</button>
+            <form onSubmit={handleAddImageSubmit} className="space-y-4">
+              <input type="file" accept="image/*" className="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl focus:ring-2 focus:ring-teal-500 outline-none text-sm" onChange={e => setNewImage({ file: e.target.files[0] })} required />
+              <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 mt-6">
+                <button type="button" onClick={() => setShowAddImageModal(false)} className="px-5 py-2.5 text-gray-600 bg-gray-100 rounded-full font-bold w-full sm:w-auto">Annuler</button>
+                <button type="submit" className="bg-teal-600 text-white px-5 py-2.5 rounded-full font-bold w-full sm:w-auto hover:bg-teal-700 shadow-md">Uploader</button>
               </div>
             </form>
           </div>
         </div>
       )}
 
-      {/* MODAL AJOUTER CATÉGORIE */}
+      {/* MODAL ADD CATEGORIE */}
       {showAddCategoryModal && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex justify-center items-center p-4">
-          <div className="bg-white p-6 rounded-2xl shadow-xl max-w-sm w-full">
-            <h2 className="text-xl font-bold mb-4">Ajouter une Catégorie</h2>
-            <form onSubmit={handleAddCategorySubmit} className="space-y-3">
-              <input 
-                type="text" 
-                placeholder="Nom de la catégorie (ex: Pizzas)" 
-                className="w-full border p-2 rounded focus:ring-2 focus:ring-teal-500 outline-none"
-                value={newCategory.nom} 
-                onChange={e => setNewCategory({ nom: e.target.value })} 
-                required 
-              />
-              
-              <div className="flex justify-end gap-2 mt-4">
-                <button type="button" onClick={() => setShowAddCategoryModal(false)} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded">Annuler</button>
-                <button type="submit" className="bg-teal-600 text-white px-4 py-2 rounded hover:bg-teal-700">Ajouter</button>
+        <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm z-50 flex justify-center items-center p-4">
+          <div className="bg-white p-6 rounded-2xl shadow-xl w-full max-w-sm">
+            <h2 className="text-xl font-bold mb-4">Ajouter Catégorie</h2>
+            <form onSubmit={handleAddCategorySubmit} className="space-y-4">
+              <input type="text" placeholder="Nom de la catégorie" className="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl focus:ring-2 focus:ring-teal-500 outline-none font-medium" value={newCategory.nom} onChange={e => setNewCategory({ nom: e.target.value })} required />
+              <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 mt-6">
+                <button type="button" onClick={() => setShowAddCategoryModal(false)} className="px-5 py-2.5 text-gray-600 bg-gray-100 rounded-full font-bold w-full sm:w-auto">Annuler</button>
+                <button type="submit" className="bg-teal-600 text-white px-5 py-2.5 rounded-full font-bold w-full sm:w-auto hover:bg-teal-700 shadow-md">Ajouter</button>
               </div>
             </form>
           </div>
         </div>
       )}
+
+      {/* MODAL ADD/EDIT PRODUIT (HADA LI KAN NA9ESS) */}
+      {showProductModal && (
+        <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm z-[100] flex justify-center items-center p-4">
+          <div className="bg-white p-6 rounded-2xl shadow-xl max-w-lg w-full overflow-y-auto max-h-[90vh]">
+            <h2 className="text-xl font-bold mb-4">
+              {productData.IdProduit ? 'Modifier le plat' : 'Ajouter un plat'}
+            </h2>
+            <form onSubmit={handleProductSubmit} className="space-y-4">
+              <input type="text" placeholder="Nom du plat" className="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl focus:ring-2 focus:ring-teal-500 outline-none font-medium" value={productData.nom} onChange={e => setProductData({ ...productData, nom: e.target.value })} required />
+              
+              <textarea placeholder="Description (facultatif)" rows="3" className="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl focus:ring-2 focus:ring-teal-500 outline-none font-medium resize-none" value={productData.description} onChange={e => setProductData({ ...productData, description: e.target.value })} />
+              
+              <div className="grid grid-cols-2 gap-4">
+                <input type="number" min="0" step="0.01" placeholder="Prix (DH)" className="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl focus:ring-2 focus:ring-teal-500 outline-none font-medium" value={productData.prix} onChange={e => setProductData({ ...productData, prix: e.target.value })} required />
+                
+                <select className="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl focus:ring-2 focus:ring-teal-500 outline-none font-medium cursor-pointer" value={productData.categorie_id} onChange={e => setProductData({ ...productData, categorie_id: e.target.value })} required >
+                  <option value="" disabled>Catégorie</option>
+                  {categoriesList.map(category => (
+                    <option key={category.id} value={category.id}>{category.nom}</option>
+                  ))}
+                </select>
+              </div>
+              
+              {categoriesList.length === 0 && (
+                <p className="text-sm text-red-600 font-bold bg-red-50 p-3 rounded-xl">⚠️ Ajoutez d'abord une catégorie !</p>
+              )}
+              
+              <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 mt-6">
+                <button type="button" onClick={() => setShowProductModal(false)} className="px-5 py-2.5 text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-full font-bold w-full sm:w-auto transition-colors">Annuler</button>
+                <button type="submit" disabled={categoriesList.length === 0} className="bg-teal-600 text-white px-5 py-2.5 rounded-full font-bold w-full sm:w-auto hover:bg-teal-700 shadow-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                  {productData.IdProduit ? 'Sauvegarder' : 'Ajouter'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL GESTION IMAGES DU PRODUIT (HADA TA HOWA KAN NA9ESS) */}
+      {showProductImageModal && selectedProduct && (
+        <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm z-[100] flex justify-center items-center p-4">
+          <div className="bg-white p-6 rounded-2xl shadow-xl max-w-lg w-full overflow-y-auto max-h-[90vh]">
+            <h2 className="text-xl font-bold mb-4">Images de <span className="text-teal-600">{selectedProduct.nom}</span></h2>
+            
+            {selectedProduct.produit_images?.length > 0 ? (
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
+                {selectedProduct.produit_images.map(image => (
+                  <div key={image.id} className="relative aspect-square rounded-xl overflow-hidden border border-gray-100 bg-gray-100 shadow-sm group">
+                    <img src={getImageUrl(image.nom_image)} alt={selectedProduct.nom} className="w-full h-full object-cover" />
+                    
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex justify-center items-center gap-2 backdrop-blur-[2px]">
+                      {image.est_principale !== 1 && (
+                        <button type="button" onClick={() => setMainImageProduit(selectedProduct, image.id)} className="bg-black/60 text-white p-1.5 rounded-full hover:bg-amber-500 transition-colors" title="Cover">
+                          <span className="material-symbols-outlined text-[16px] flex">star</span>
+                        </button>
+                      )}
+                      <button type="button" onClick={() => supprimerImageProduit(selectedProduct, image.id)} className="bg-black/60 text-white p-1.5 rounded-full hover:bg-red-500 transition-colors" title="Supprimer">
+                        <span className="material-symbols-outlined text-[16px] flex">delete</span>
+                      </button>
+                    </div>
+
+                    {image.est_principale === 1 && (
+                      <span className="absolute bottom-1.5 left-1.5 bg-amber-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-md uppercase shadow-sm">Cover</span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-center py-6 text-gray-500 text-sm border border-dashed rounded-xl mb-6">Aucune image pour ce plat.</p>
+            )}
+            
+            <form onSubmit={handleProductImageSubmit} className="space-y-4">
+              <input type="file" accept="image/jpeg,image/png,image/jpg,image/webp" className="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl focus:ring-2 focus:ring-teal-500 outline-none text-sm" onChange={e => setProductImage(e.target.files[0] || null)} required />
+              
+              <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 mt-6">
+                <button type="button" onClick={() => setShowProductImageModal(false)} className="px-5 py-2.5 text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-full font-bold w-full sm:w-auto transition-colors">Fermer</button>
+                <button type="submit" className="bg-teal-600 text-white px-5 py-2.5 rounded-full font-bold w-full sm:w-auto hover:bg-teal-700 shadow-md transition-colors">Ajouter photo</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
