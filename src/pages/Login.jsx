@@ -34,7 +34,7 @@ export default function Login() {
                 navigate("/dashboardAdmin");
                 return;
             }
-            navigate('/dashboard');
+            navigate('/');
         } catch (error) {
             if (error.response) {
                 setErrorMessage(error.response.data.message);

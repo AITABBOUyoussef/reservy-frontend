@@ -27,7 +27,7 @@ export default function Register() {
 
             localStorage.setItem('token', token);
             localStorage.setItem('user', JSON.stringify(user));
-            navigate('/dashboard');
+            navigate('/');
         }catch (error) {
             if (error.response?.data?.errors?.email) {
                 setErrorMessage(error.response.data.errors.email[0]);
