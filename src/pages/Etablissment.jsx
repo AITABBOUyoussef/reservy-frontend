@@ -85,6 +85,7 @@ export default function Etablissment() {
 
   // Logique d'extraction des catégories (inchangée)
   const categories = Array.from(new Map((etablissement.produits || []).filter((p) => p.categorie).map((p) => [p.categorie.id, p.categorie])).values());
+  // const options = Array.from(new Map((etablissement.produits || []).filter((p) => p.produit_options).map((p) => [p.produit_options.id, p.produit_options])).values());
   const filteredProduits = selectedCategory === 'ALL' ? etablissement.produits || [] : (etablissement.produits || []).filter((p) => p.categorie_id === selectedCategory);
   const etabImages = sortImages(etablissement.images);
   const mainImage = etabImages[0];
@@ -241,21 +242,46 @@ export default function Etablissment() {
                       )}
 
                       {/* Info & Bouton */}
+            {/* Info & Bouton */}
                       <div className="p-5 flex flex-col flex-1 justify-between gap-3 bg-white">
                         <div>
-                          <div className="flex justify-between items-start gap-2 mb-2">
-                            <h4 className="font-bold text-base text-gray-900 group-hover:text-teal-600 transition-colors">{prod.nom}</h4>
-                            <span className="text-sm font-black text-amber-600 shrink-0 bg-amber-50 px-2 py-1 rounded-md border border-amber-100">
+                          {/* Titre w Prix */}
+                          <div className="flex justify-between items-start gap-2 mb-1.5">
+                            <h4 className="font-bold text-base text-gray-900 group-hover:text-teal-600 transition-colors line-clamp-1">
+                              {prod.nom}
+                            </h4>
+                            <span className="text-sm font-black text-amber-600 shrink-0 bg-amber-50 px-2.5 py-1 rounded-md border border-amber-100">
                               {prod.prix} DH
                             </span>
                           </div>
+
+                          {/* Options du Produit (Design Jdid) */}
+                          {prod.produit_options && prod.produit_options.length > 0 && (
+                            <div className="flex flex-wrap gap-1.5 mb-2">
+                              {prod.produit_options.map((option) => (
+                                <span 
+                                  key={option.id} 
+                                  className="text-[11px] font-semibold text-gray-600 bg-gray-100 border border-gray-200 px-2 py-0.5 rounded-md flex items-center gap-1"
+                                >
+                                  {option.nom_option}
+                                  {/* Ila kant l'option 3ndha taman zayd (supplément), t9der tbiyno hna */}
+                                  {option.prix_supplementaire > 0 && (
+                                    <span className="text-teal-600">(+{option.prix_supplementaire} DH)</span>
+                                  )}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+
+                          {/* Description */}
                           {prod.description && (
-                            <p className="text-sm text-gray-500 line-clamp-2 leading-relaxed">
+                            <p className="text-sm text-gray-500 line-clamp-2 leading-relaxed mt-1">
                               {prod.description}
                             </p>
                           )}
                         </div>
 
+                        {/* Bouton Ajouter */}
                         <div className="pt-3 border-t border-gray-50 mt-auto">
                           <button 
                             onClick={() => addToCart(prod)} 
