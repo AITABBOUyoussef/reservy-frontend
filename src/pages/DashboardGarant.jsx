@@ -37,8 +37,10 @@ export default function DashboardGarant() {
 
   const [showProductModal, setShowProductModal] = useState(false);
   const [showProductImageModal, setShowProductImageModal] = useState(false);
+  const [showProductOptionModal, setShowProductOptionModal] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [productImage, setProductImage] = useState(null);
+  const [productOption, setProductOption] = useState(null);
   const [productData, setProductData] = useState({
     IdProduit: null,
     nom: '',
@@ -46,7 +48,12 @@ export default function DashboardGarant() {
     prix: '',
     categorie_id: ''
   });
-
+  const [productOptionData, setProductOptionData] = useState({
+    produit_id: null,
+    nom_option: '',
+    prix_supplementaire: ''
+    
+  });
   const [activeCategory, setActiveCategory] = useState('all');
 
   // ================= FETCH DATA =================
@@ -308,6 +315,42 @@ export default function DashboardGarant() {
     setShowProductModal(true);
   };
 
+  ////////////////////////////
+ const openProductOptoinModal = (produit) => {
+    setSelectedProduct(produit);
+    setProductOption(null);
+    setShowProductOptionModal(true);
+  };
+    const handleProductOptionSubmit = async (e) => {
+    e.preventDefault();
+    if (!productOptionData) return notify("Sélectionnez une Produit.", "error");
+  const payload = {
+      produit_id: selectedProduct.id,
+      nom_option: productOptionData.nom_option.trim(),
+      prix_supplementaire: Number(productOptionData.prix_supplementaire)
+    };
+
+
+    try {
+      const response = await axiosInstance.post('/AddProduitOption', payload);
+      const option = response.data.ProuitOption;
+      
+      // setEtablissement(prev => ({
+      //   ...prev,
+      //   produits: prev.produits.map(p => p.id === selectedProduct.id
+      //     ? { ...p, produit_options: [...(p.produit_options || []).map(i => ({ ...i, est_principale: 0 })), image] }
+      //     : p)
+      // }));
+      
+      setSelectedProduct(prev => prev ? { ...prev, produit_options: [...(prev.produit_options || []), option] } : prev);
+      setShowProductOptionModal(false);
+      setProductOption(null);
+      notify("Option ajoutée au produit.");
+    } catch (error) {
+      notify("Erreur d'upload.", "error");
+    }
+  };
+
   // ================= LOGIC: IMAGES PRODUITS =================
   const openProductImageModal = (produit) => {
     setSelectedProduct(produit);
@@ -555,6 +598,9 @@ export default function DashboardGarant() {
                         <button onClick={() => openProductImageModal(prod)} title="Gérer l'image" className="text-gray-500 hover:text-teal-600 bg-white border border-gray-200 px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1 shadow-sm transition-colors">
                           <span className="material-symbols-outlined text-[16px]">add_a_photo</span> Image
                         </button>
+                         <button onClick={() => openProductOptoinModal(prod)} title="Gérer l'image" className="text-gray-500 hover:text-teal-600 bg-white border border-gray-200 px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1 shadow-sm transition-colors">
+                          <span className="material-symbols-outlined text-[16px]">add</span> Option
+                        </button>
                         <button onClick={() => openProductModal(prod)} title="Modifier" className="text-gray-500 hover:text-teal-600 bg-white border border-gray-200 p-1.5 rounded-lg shadow-sm transition-colors">
                           <span className="material-symbols-outlined text-[18px] flex">edit</span>
                         </button>
@@ -785,6 +831,24 @@ export default function DashboardGarant() {
       )}
 
       {/* MODAL GESTION IMAGES DU PRODUIT (HADA TA HOWA KAN NA9ESS) */}
+      {showProductOptionModal  && selectedProduct &&(
+         <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm z-[100] flex justify-center items-center p-4">
+          <div className="bg-white p-6 rounded-2xl shadow-xl max-w-lg w-full overflow-y-auto max-h-[90vh]">
+            <h2 className="text-xl font-bold mb-4">Options de <span className="text-teal-600">{selectedProduct.nom}</span></h2>
+            
+           <form onSubmit={handleProductOptionSubmit} className="space-y-4">
+              <input type="number" min="0" step="0.10" placeholder="Prix (DH)" className="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl focus:ring-2 focus:ring-teal-500 outline-none font-medium"  onChange={e => setProductOptionData({ ...productOptionData, prix_supplementaire: e.target.value })} required />
+                
+              <input type="text" placeholder="Nom du Option" className="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl focus:ring-2 focus:ring-teal-500 outline-none font-medium" onChange={e => setProductOptionData({ ...productOptionData, nom_option: e.target.value })} required />
+              
+              <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 mt-6">
+                <button type="button" onClick={() => setShowProductOptionModal(false)} className="px-5 py-2.5 text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-full font-bold w-full sm:w-auto transition-colors">Fermer</button>
+                <button type="submit" className="bg-teal-600 text-white px-5 py-2.5 rounded-full font-bold w-full sm:w-auto hover:bg-teal-700 shadow-md transition-colors">Ajouter Option</button>
+              </div>
+            </form>
+            </div>
+            </div>)
+      }
       {showProductImageModal && selectedProduct && (
         <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm z-[100] flex justify-center items-center p-4">
           <div className="bg-white p-6 rounded-2xl shadow-xl max-w-lg w-full overflow-y-auto max-h-[90vh]">
@@ -825,6 +889,7 @@ export default function DashboardGarant() {
                 <button type="submit" className="bg-teal-600 text-white px-5 py-2.5 rounded-full font-bold w-full sm:w-auto hover:bg-teal-700 shadow-md transition-colors">Ajouter photo</button>
               </div>
             </form>
+             
           </div>
         </div>
       )}
