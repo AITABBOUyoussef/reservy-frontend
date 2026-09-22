@@ -333,21 +333,30 @@ export default function DashboardGarant() {
 
     try {
       const response = await axiosInstance.post('/AddProduitOption', payload);
-      const option = response.data.ProuitOption;
+      const option = response.data.produit_options;
       
-      // setEtablissement(prev => ({
-      //   ...prev,
-      //   produits: prev.produits.map(p => p.id === selectedProduct.id
-      //     ? { ...p, produit_options: [...(p.produit_options || []).map(i => ({ ...i, est_principale: 0 })), image] }
-      //     : p)
-      // }));
+   
       
-      setSelectedProduct(prev => prev ? { ...prev, produit_options: [...(prev.produit_options || []), option] } : prev);
+    fetchDetails();
       setShowProductOptionModal(false);
       setProductOption(null);
       notify("Option ajoutée au produit.");
+      
     } catch (error) {
       notify("Erreur d'upload.", "error");
+    }
+  };
+
+  const supprimerOption = async (produit , optionId) => {
+    
+    if (!window.confirm("Supprimer cette Option ?")) return;
+    try {
+      await axiosInstance.post('/DeletProduitOption', { produit_id: produit, option_id: optionId });
+      fetchDetails();
+      notify("Option supprimée.");
+
+    } catch (error) {
+      notify("Erreur de suppression.", "error");
     }
   };
 
@@ -586,9 +595,32 @@ export default function DashboardGarant() {
                               </span>
                             )}
                           </div>
+                               {prod.produit_options && prod.produit_options.length > 0 && (
+                            <div className="flex flex-wrap gap-1.5 mb-2">
+                              {prod.produit_options.map((option) => (
+                                <span 
+                                  key={option.id} 
+                                  className="text-[11px] font-semibold text-gray-600 bg-gray-100 border border-gray-200 px-2 py-0.5 rounded-md flex items-center gap-1"
+                                >
+                                  {option.nom_option}
+                                  {/* Ila kant l'option 3ndha taman zayd (supplément), t9der tbiyno hna */}
+                                  {option.prix_supplementaire > 0 && (
+                                    <span className="text-teal-600">(+{option.prix_supplementaire} DH)</span>
+                                    
+                                  )}
+                                   <button onClick={(e) => { e.stopPropagation(); supprimerOption(prod.id , option.id); }} className={`p-1 ml-1 rounded-full transition-colors`}>
+                    <span className="material-symbols-outlined text-[14px] flex">close</span>
+                  </button>
+                                </span>
+                                
+                                
+                              ))}
+                            </div>
+                          )}
                           <span className="font-extrabold text-amber-600 bg-amber-50 px-2 py-1 rounded-md text-sm border border-amber-100">
                             {Number(prod.prix).toFixed(2)} DH
                           </span>
+                          
                         </div>
                         <p className="text-xs sm:text-sm text-gray-500 mt-2 line-clamp-2">{prod.description}</p>
                       </div>
@@ -837,10 +869,12 @@ export default function DashboardGarant() {
             <h2 className="text-xl font-bold mb-4">Options de <span className="text-teal-600">{selectedProduct.nom}</span></h2>
             
            <form onSubmit={handleProductOptionSubmit} className="space-y-4">
+            
+              <input type="text" placeholder="Nom du Option" className="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl focus:ring-2 focus:ring-teal-500 outline-none font-medium" onChange={e => setProductOptionData({ ...productOptionData, nom_option: e.target.value })} required />
+           
               <input type="number" min="0" step="0.10" placeholder="Prix (DH)" className="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl focus:ring-2 focus:ring-teal-500 outline-none font-medium"  onChange={e => setProductOptionData({ ...productOptionData, prix_supplementaire: e.target.value })} required />
                 
-              <input type="text" placeholder="Nom du Option" className="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl focus:ring-2 focus:ring-teal-500 outline-none font-medium" onChange={e => setProductOptionData({ ...productOptionData, nom_option: e.target.value })} required />
-              
+             
               <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 mt-6">
                 <button type="button" onClick={() => setShowProductOptionModal(false)} className="px-5 py-2.5 text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-full font-bold w-full sm:w-auto transition-colors">Fermer</button>
                 <button type="submit" className="bg-teal-600 text-white px-5 py-2.5 rounded-full font-bold w-full sm:w-auto hover:bg-teal-700 shadow-md transition-colors">Ajouter Option</button>
