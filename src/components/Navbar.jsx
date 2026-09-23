@@ -32,30 +32,12 @@ export default function Navbar() {
         
         {/* LOGO W LOCALISATION */}
         <div className="flex items-center gap-4">
-          <Link to="/dashboard" className="flex items-center gap-2">
+          <Link to="/" className="flex items-center gap-2">
             <span className="text-2xl font-black text-gray-900 tracking-tight">Reservy</span>
           </Link>
-          
-          {(userRole === 'client' || !token) && (
-            <div className="hidden xl:flex items-center gap-2 bg-gray-50 px-4 py-1.5 rounded-full border border-gray-100">
-              <span className="material-symbols-outlined text-teal-600 text-[20px]">location_on</span>
-              <div className="flex flex-col">
-                <span className="text-[10px] uppercase font-bold text-gray-500">Livrer à</span>
-                <span className="text-sm font-bold text-gray-800">Casablanca, Maroc</span>
-              </div>
-            </div>
-          )}
+     
         </div>
 
-        {/* BARRE DE RECHERCHE (DESKTOP) */}
-        <div className="hidden md:flex flex-1 max-w-md mx-8 items-center bg-gray-100 rounded-full px-4 py-2 border border-transparent focus-within:border-teal-500 focus-within:bg-white">
-          <span className="material-symbols-outlined text-gray-500 text-[20px] mr-2">search</span>
-          <input 
-            className="bg-transparent outline-none text-sm w-full font-medium" 
-            placeholder="Rechercher..." 
-            type="text" 
-          />
-        </div>
 
         {/* NAVIGATION DESKTOP */}
         <div className="hidden lg:flex items-center gap-6">
@@ -67,7 +49,7 @@ export default function Navbar() {
             )}
 
             {(token && userRole === 'client') && (
-              <Link to="/" className="text-sm font-bold text-gray-700 hover:text-teal-600">
+              <Link to="/MesReservations" className="text-sm font-bold text-gray-700 hover:text-teal-600">
                 Mes Réservations
               </Link>
             )}
