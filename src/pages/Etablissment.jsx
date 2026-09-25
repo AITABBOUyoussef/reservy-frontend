@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+ import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import axiosInstance from '../api/axios';
 import Navbar from '../components/Navbar';
@@ -37,10 +37,6 @@ export default function Etablissment() {
   const [cart, setCart] = useState([]);
   const [cartTabl, setCartTabl] = useState([]);
   
-  // States dyal waqt la réservation
-  const [dateReservation, setDateReservation] = useState('');
-  const [heureReservation, setHeureReservation] = useState('');
-
   const sortImages = (imagesArray) => {
     if (!imagesArray || imagesArray.length === 0) return [];
     const mainImg = imagesArray.find(img => img.est_principale);
@@ -79,8 +75,19 @@ export default function Etablissment() {
       const existsTabl = prev.find((item) => item.id === tabl.id);
       if (existsTabl) return prev; 
       
-      return [...prev, { ...tabl, places_reservees: 1 }];
+      return [...prev, { ...tabl, places_reservees: 1, date_reservation: '', heure_reservation: '' }];
     });
+  };
+
+  // Kol table 3andha date et heure dyalha.
+  const updateTableReservation = (tableId, field, value) => {
+    setCartTabl((prev) => prev.map((table) => {
+      if (table.id !== tableId) return table;
+      if (field === 'date_reservation') {
+        return { ...table, date_reservation: value, heure_reservation: '' };
+      }
+      return { ...table, [field]: value };
+    }));
   };
 
   // Modifier les places dyal t-tabla
@@ -114,40 +121,49 @@ export default function Etablissment() {
   const cartTotal = cart.reduce((acc, item) => acc + parseFloat(item.prix) * item.quantity, 0);
   const cartTablTotal = cartTabl.reduce((acc, item) => acc + item.places_reservees, 0);
 
-  // Fonction li ghadi t-kmml fiha l-khdma
-  // T-tarikh dyal l-youma b format YYYY-MM-DD
-  const today = new Date().toISOString().split('T')[0];
-
-  // L-waqt dyal daba b format HH:MM
+  // Date locale (toISOString utilise UTC et peut donner un autre jour).
   const now = new Date();
+  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
   const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-  
-  // L-waqt l-adna (min time) kay-t-tbqe ghir ila khtar l-user n-nhar dyal l-youma
-  const minTime = dateReservation === today ? currentTime : undefined;
+
   const passerCommande = async () => {
-   if (dateReservation === today && heureReservation < currentTime) {
-      alert("L-waqt li khtari fat! 3afak khtar waqt f l-mostaqbal.");
-      return; 
-    }
-    try {
-      for(const tabl of cartTabl){
-     const payload = {
-        etablissement_id : etablissement.id,
-        table_id :  tabl.id ,
-        date_reservation : dateReservation ,
-        montant_total : cartTotal, 
-        heure_reservation : heureReservation ,
-        nombre_personnes : tabl.places_reservees,
-      
-      };
-    console.log(` réservation dyal table N° ${tabl.numero} && ${cartTotal}...`);
-      console.log(minTime);
-      await axiosInstance.post('reservations', payload);
+    if (cartTabl.length === 0) {
+      alert('Ajoutez au moins une table pour créer une réservation.');
+      return;
     }
 
-    console.log(" les réservations dazou mzyan");
+    const tableIncomplete = cartTabl.find((table) => !table.date_reservation || !table.heure_reservation);
+    if (tableIncomplete) {
+      alert(`Choisissez la date et l'heure pour la table ${tableIncomplete.numero}.`);
+      return;
+    }
+
+    const tablePassee = cartTabl.find((table) => {
+      const dateTime = new Date(`${table.date_reservation}T${table.heure_reservation}`);
+      return Number.isNaN(dateTime.getTime()) || dateTime <= new Date();
+    });
+    if (tablePassee) {
+      alert(`Choisissez une date et une heure futures pour la table ${tablePassee.numero}.`);
+      return;
+    }
+
+    try {
+      for (const table of cartTabl) {
+        const payload = {
+          etablissement_id: etablissement.id,
+          table_id: table.id,
+          date_reservation: table.date_reservation,
+          heure_reservation: table.heure_reservation,
+          nombre_personnes: table.places_reservees,
+          montant_total: cartTotal,
+        };
+        await axiosInstance.post('reservations', payload);
+      }
+      alert('Réservation(s) enregistrée(s) avec succès.');
+      setCartTabl([]);
     } catch (error) {
-      console.error("Erreur:", error);
+      console.error('Erreur:', error);
+      alert(error.response?.data?.message || 'Erreur lors de la réservation. Vérifiez vos choix.');
     }
   };
 
@@ -366,47 +382,50 @@ export default function Etablissment() {
                   </div>
                 ) : (
                   <>
-                    {/* Affichage des Tables Réservées */}
-                    { <div className="flex items-center gap-2 mt-1">
-  <input 
-    type="date" 
-    value={dateReservation}
-    min={today} // Hna m-n3na ay tarikh 9dim
-    onChange={(e) => setDateReservation(e.target.value)}
-    className="w-full text-xs font-semibold text-gray-700 bg-white border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 transition-colors"
-  />
-  <input 
-    type="time" 
-    value={heureReservation}
-    min={minTime} // Hna m-n3na ay waqt daz ila kan t-tarikh howa l-youma
-    onChange={(e) => setHeureReservation(e.target.value)}
-    className="w-full text-xs font-semibold text-gray-700 bg-white border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 transition-colors"
-  />
-</div>}
+                    {/* Chaque table a ses propres date et heure. */}
                     {cartTabl.map((table) => (
-                      <div key={`tabl-${table.id}`} className="flex items-center justify-between gap-3 pb-4 border-b border-gray-100 last:border-0 last:pb-0">
-                        <div className="flex items-center gap-3 flex-1 min-w-0">
-                          <div className="w-12 h-12 rounded-xl border border-teal-100 overflow-hidden shrink-0 bg-teal-50 flex items-center justify-center text-teal-600">
-                            <span className="material-symbols-outlined">table_restaurant</span>
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex justify-between items-start mb-2">
-                              <div>
-                                <h4 className="text-sm font-bold text-gray-900 truncate">Table {table.numero}</h4>
-                                <span className="text-xs font-semibold text-teal-600">Max: {table.capacite} Personnes</span>
-                              </div>
+                      <div key={`tabl-${table.id}`} className="rounded-2xl border border-teal-100 bg-teal-50/40 p-4 space-y-4">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex items-center gap-3 min-w-0">
+                            <span className="material-symbols-outlined flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-teal-600">table_restaurant</span>
+                            <div className="min-w-0">
+                              <h4 className="text-sm font-bold text-gray-900">Table {table.numero}</h4>
+                              <p className="text-xs text-gray-500">Jusqu'à {table.capacite} personnes</p>
                             </div>
-                           
+                          </div>
+                          <div className="flex items-center gap-2 rounded-full border border-gray-200 bg-white px-2 py-1.5 shrink-0">
+                            {table.places_reservees === 1 ? (
+                              <button type="button" aria-label={`Retirer la table ${table.numero}`} onClick={() => removeTablFromCart(table.id)} className="flex h-6 w-6 items-center justify-center rounded-full hover:bg-red-50"><TrashIcon /></button>
+                            ) : (
+                              <button type="button" aria-label={`Retirer une personne de la table ${table.numero}`} onClick={() => updateCapacite(table.id, -1)} className="flex h-6 w-6 items-center justify-center rounded-full font-bold hover:bg-gray-100">−</button>
+                            )}
+                            <span className="w-4 text-center text-sm font-bold">{table.places_reservees}</span>
+                            <button type="button" aria-label={`Ajouter une personne à la table ${table.numero}`} disabled={table.places_reservees >= table.capacite} onClick={() => updateCapacite(table.id, 1)} className="flex h-6 w-6 items-center justify-center rounded-full font-bold hover:bg-gray-100 disabled:opacity-30">+</button>
                           </div>
                         </div>
-                        <div className="flex items-center gap-3 bg-gray-50 border border-gray-200 px-2 py-1.5 rounded-full shrink-0">
-                          {table.places_reservees === 1 ? (
-                            <button onClick={() => removeTablFromCart(table.id)} className="w-6 h-6 flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-white rounded-full transition-colors"><TrashIcon /></button>
-                          ) : (
-                            <button onClick={() => updateCapacite(table.id, -1)} className="w-6 h-6 flex items-center justify-center text-gray-600 font-bold hover:bg-white rounded-full transition-colors">-</button>
-                          )}
-                          <span className="text-sm font-bold text-gray-900 w-3 text-center">{table.places_reservees}</span>
-                          <button onClick={() => updateCapacite(table.id, 1)} className="w-6 h-6 flex items-center justify-center text-gray-600 font-bold hover:bg-white rounded-full transition-colors">+</button>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <label className="block text-xs font-bold text-gray-700">
+                            Date de réservation
+                            <input
+                              type="date"
+                              value={table.date_reservation}
+                              min={today}
+                              onChange={(e) => updateTableReservation(table.id, 'date_reservation', e.target.value)}
+                              className="mt-1.5 w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-800 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
+                            />
+                          </label>
+                          <label className="block text-xs font-bold text-gray-700">
+                            Heure de réservation
+                            <input
+                              type="time"
+                              value={table.heure_reservation}
+                              min={table.date_reservation === today ? currentTime : undefined}
+                              disabled={!table.date_reservation}
+                              onChange={(e) => updateTableReservation(table.id, 'heure_reservation', e.target.value)}
+                              className="mt-1.5 w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-800 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 disabled:bg-gray-100 disabled:text-gray-400"
+                            />
+                          </label>
                         </div>
                       </div>
                     ))}

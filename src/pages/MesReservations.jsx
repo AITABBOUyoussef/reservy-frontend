@@ -7,6 +7,7 @@ import { getImageUrl } from '../utils/imageUrl';
 
 export default function MesReservations() {
   const [reservations, setReservations] = useState([]);
+  const [reservationsDobl, setReservationsDobl] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
@@ -60,8 +61,7 @@ export default function MesReservations() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {reservations.length > 0 ? (
                 reservations.map((res) => {
-                  // Hna kan-jbdo l-ma3loumat mn l-JSON dyalek
-                  const nomRestaurant = res.etablissement.nom 
+                   const nomRestaurant = res.etablissement.nom 
                   const ville = res.etablissement.ville ;
                   const dateReservation = res.date_reservation;
                   const heureReservation = res.heure_reservation;
@@ -70,7 +70,12 @@ export default function MesReservations() {
                   const numeroTable = res.table?.numero || "?";
                   const statut = res.statut;
                   const img = res.etablissement.images[0].nom_image;
-            //    console.log(img);
+// {
+//   if(){
+    
+//   }
+// }
+               console.log(dateReservation);
 
                   return (
                     <div key={res.id} onClick={() => handNav(res.etablissement?.id)} className="bg-white rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-all overflow-hidden flex flex-col cursor-pointer group">
