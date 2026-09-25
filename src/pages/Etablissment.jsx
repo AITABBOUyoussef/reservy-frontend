@@ -115,18 +115,37 @@ export default function Etablissment() {
   const cartTablTotal = cartTabl.reduce((acc, item) => acc + item.places_reservees, 0);
 
   // Fonction li ghadi t-kmml fiha l-khdma
+  // T-tarikh dyal l-youma b format YYYY-MM-DD
+  const today = new Date().toISOString().split('T')[0];
+
+  // L-waqt dyal daba b format HH:MM
+  const now = new Date();
+  const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+  
+  // L-waqt l-adna (min time) kay-t-tbqe ghir ila khtar l-user n-nhar dyal l-youma
+  const minTime = dateReservation === today ? currentTime : undefined;
   const passerCommande = async () => {
+   if (dateReservation === today && heureReservation < currentTime) {
+      alert("L-waqt li khtari fat! 3afak khtar waqt f l-mostaqbal.");
+      return; 
+    }
     try {
-      // Hna khassna n-jem3ou l-payload!
-      const payload = {
-        // etablissement_id: ???
-        // table_id: ???
-        // ... w ma3loumat khrin
-      };
+      for(const tabl of cartTabl){
+     const payload = {
+        etablissement_id : etablissement.id,
+        table_id :  tabl.id ,
+        date_reservation : dateReservation ,
+        montant_total : cartTotal, 
+        heure_reservation : heureReservation ,
+        nombre_personnes : tabl.places_reservees,
       
-      console.log("Payload à envoyer:", payload);
-      // const response = await axiosInstance.post('reservations', payload);
-      // ...
+      };
+    console.log(` réservation dyal table N° ${tabl.numero} && ${cartTotal}...`);
+      console.log(minTime);
+      await axiosInstance.post('reservations', payload);
+    }
+
+    console.log(" les réservations dazou mzyan");
     } catch (error) {
       console.error("Erreur:", error);
     }
@@ -349,19 +368,21 @@ export default function Etablissment() {
                   <>
                     {/* Affichage des Tables Réservées */}
                     { <div className="flex items-center gap-2 mt-1">
-                              <input 
-                                type="date" 
-                                value={dateReservation}
-                                onChange={(e) => setDateReservation(e.target.value)}
-                                className="w-full text-xs font-semibold text-gray-700 bg-white border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 transition-colors"
-                              />
-                              <input 
-                                type="time" 
-                                value={heureReservation}
-                                onChange={(e) => setHeureReservation(e.target.value)}
-                                className="w-full text-xs font-semibold text-gray-700 bg-white border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 transition-colors"
-                              />
-                            </div>}
+  <input 
+    type="date" 
+    value={dateReservation}
+    min={today} // Hna m-n3na ay tarikh 9dim
+    onChange={(e) => setDateReservation(e.target.value)}
+    className="w-full text-xs font-semibold text-gray-700 bg-white border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 transition-colors"
+  />
+  <input 
+    type="time" 
+    value={heureReservation}
+    min={minTime} // Hna m-n3na ay waqt daz ila kan t-tarikh howa l-youma
+    onChange={(e) => setHeureReservation(e.target.value)}
+    className="w-full text-xs font-semibold text-gray-700 bg-white border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 transition-colors"
+  />
+</div>}
                     {cartTabl.map((table) => (
                       <div key={`tabl-${table.id}`} className="flex items-center justify-between gap-3 pb-4 border-b border-gray-100 last:border-0 last:pb-0">
                         <div className="flex items-center gap-3 flex-1 min-w-0">
