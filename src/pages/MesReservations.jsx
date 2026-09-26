@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import axiosInstance from "../api/axios";
+import { getImageUrl } from "../utils/imageUrl";
 
 const formatPrice = (price) =>
   `${Number(price || 0).toFixed(2).replace(".", ",")} DH`;
@@ -107,7 +108,21 @@ function ReservationCard({ commande }) {
               key={article.id_ligne}
               className="flex items-start justify-between gap-4 py-3"
             >
-              <div className="min-w-0">
+              <div className="flex min-w-0 items-start gap-3">
+                {article.image ? (
+                  <img
+                    src={getImageUrl(article.image)}
+                    alt={article.nom}
+                    className="h-14 w-14 shrink-0 rounded-xl object-cover"
+                  />
+                ) : (
+                  <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-gray-200 text-gray-400">
+                    <span className="material-symbols-outlined text-2xl">
+                      restaurant
+                    </span>
+                  </div>
+                )}
+                <div className="min-w-0">
                 <p className="truncate text-sm font-bold text-gray-800">
                   <span className="mr-2 text-teal-700">
                     {article.quantite}×
@@ -122,6 +137,7 @@ function ReservationCard({ commande }) {
                     {formatDate(article.created_at)}
                   </p>
                 )}
+                </div>
                 {article.instructions_speciales && (
                   <p className="mt-1 text-xs font-medium text-gray-500">
                     Note : {article.instructions_speciales}
