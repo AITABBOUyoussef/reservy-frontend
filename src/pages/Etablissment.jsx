@@ -30,7 +30,7 @@ const TrashIcon = () => (
 export default function Etablissment() {
   const { id } = useParams();
   const [etablissement, setEtablissement] = useState(null);
-  const [text, setText] = useState(null);
+  const [text, setText] = useState('');
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState('ALL');
   
@@ -135,78 +135,77 @@ const addTablToCart = (tabl) => {
   const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
   const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
 
-  const passerCommande = async () => {
-  
-
-    const tableIncomplete = cartTabl.find((table) => !table.date_reservation || !table.heure_reservation);
-    if (tableIncomplete) {
-      alert(`Choisissez la date et l'heure pour la table ${tableIncomplete.numero}.`);
+const passerCommande = async () => {
+  // Cas 1: Kayna tabla wehda + plats (reservation b commande)
+  if(cartTabl.length === 1){
+    const table = cartTabl[0];
+    
+    if (!table.date_reservation || !table.heure_reservation) {
+      alert(`Choisissez la date et l\'heure pour la table ${table.numero}.`);
       return;
     }
 
-    const tablePassee = cartTabl.find((table) => {
-      const dateTime = new Date(`${table.date_reservation}T${table.heure_reservation}`);
-      return Number.isNaN(dateTime.getTime()) || dateTime <= new Date();
-    });
-    if (tablePassee) {
-      alert(`Choisissez une date et une heure futures pour la table ${tablePassee.numero}.`);
+    const dateTime = new Date(`${table.date_reservation}T${table.heure_reservation}`);
+    if (Number.isNaN(dateTime.getTime()) || dateTime <= new Date()) {
+      alert(`Choisissez une date et une heure futures pour la table ${table.numero}.`);
       return;
     }
-if(cartTabl.length>1 || cartTabl.length==1){
+
     try {
-      for (const table of cartTabl) {
-        const payload = {
-          etablissement_id: etablissement.id,
-          table_id: table.id,
-          date_reservation: table.date_reservation,
-          heure_reservation: table.heure_reservation,
-          nombre_personnes: table.places_reservees,
-          montant_total: cartTotal,
-        };
-      const response =  await axiosInstance.post('reservations', payload);
-  if (response.data?.reservation) {
-          console.log(response.data.reservation);
+      const payload = {
+        etablissement_id: etablissement.id,
+        table_id: table.id,
+        date_reservation: table.date_reservation,
+        heure_reservation: table.heure_reservation,
+        nombre_personnes: table.places_reservees,
+        montant_total: cartTotal,
+      };
+      const response = await axiosInstance.post('reservations', payload);
+      
+      if (response.data?.reservation) {
+        for(const prod of cart){
+          const command ={  
+            reservation_id : response.data.reservation.id , 
+            produit_id : prod.id,
+            quantite : prod.quantity,
+            instructions_speciales : text,
+          };
+          await axiosInstance.post('commande-items', command);
         }
-       
-for(const prod of cart){
-const command ={  
-  reservation_id : response.data.reservation.id , 
-produit_id : prod.id,
-quantite : prod.quantity,
-instructions_speciales : text,
-};
-  await axiosInstance.post('commande-items', command);
-};
-
       }
-      alert('Réservation(s) enregistrée(s) avec succès.');
-      console.log(cart);
+      alert('Réservation enregistrée avec succès.');
       setCartTabl([]);
       setCart([]);
+      setText('');
     } catch (error) {
       console.error('Erreur:', error);
-      alert(error.response?.data?.message || 'Erreur lors de la réservation. Vérifiez vos choix.');
+      alert(error.response?.data?.message || 'Erreur lors de la réservation.');
     }
-  }else if(cart.length == 1 || cart.length>1){
+    return;
+  }
+
+  // Cas 2: Ghir plats bla tabla (commande à emporter)
+  if(cart.length > 0){
     try{
-for(const prod of cart){
-const command ={  
- 
-produit_id : prod.id,
-quantite : prod.quantity,
-instructions_speciales : text,
-};
-  await axiosInstance.post('commande-items', command);
-};
-    alert('Réservation(s) enregistrée(s) avec succès.');
-      console.log(cart);
-     
+      for(const prod of cart){
+        const command ={  
+          produit_id : prod.id,
+          quantite : prod.quantity,
+          instructions_speciales : text,
+        };
+        await axiosInstance.post('commande-items', command);
+      };
+      alert('Commande enregistrée avec succès.');
       setCart([]);
     } catch (error) {
       console.error('Erreur:', error);
-      alert(error.response?.data?.message || 'Erreur lors de la réservation. Vérifiez vos choix.');
+      alert(error.response?.data?.message || 'Erreur lors de la commande.');
     }
-  };}
+    return;
+  }
+
+  alert("Panier vide !");
+};
 
 
 
@@ -514,10 +513,43 @@ instructions_speciales : text,
                     })}
                   </>
                 )}
-                <div> 
-                  <input type="text" name="xxxxxx"  value={text}
-                onChange={(e) => setText(e.target.value)}/>
-                </div>
+              {/* Instructions Spéciales - DESIGN ZWIN */}
+<div className="pt-4 mt-2">
+  <label htmlFor="instructions" className="flex items-center gap-2 text-xs font-black tracking-widest uppercase text-gray-500 mb-2">
+    <span className="material-symbols-outlined text-teal-600 text-[16px]">edit_note</span>
+    Note pour le chef / serveur
+  </label>
+  
+  <div className="relative group">
+    <span className="material-symbols-outlined absolute left-3.5 top-3.5 text-gray-400 group-focus-within:text-teal-600 transition-colors text-[20px] pointer-events-none">chat_bubble</span>
+    
+    <textarea
+      id="instructions"
+      value={text}
+      onChange={(e) => setText(e.target.value)}
+      placeholder="Ex: Sans oignons, bien cuit, sauce à part..."
+      rows={3}
+      maxLength={200}
+      className="w-full pl-11 pr-10 py-3 bg-gray-50 border border-gray-200 rounded-2xl text-sm font-medium text-gray-900 placeholder:text-gray-400 focus:bg-white focus:border-teal-500 focus:ring-4 focus:ring-teal-500/10 outline-none transition-all resize-none"
+    />
+
+    {/* Bouton clear kayban ghir ila ktebti chi haja */}
+    {text && (
+      <button 
+        type="button"
+        onClick={() => setText('')} 
+        className="absolute right-3 top-3 w-6 h-6 bg-gray-900 text-white rounded-full flex items-center justify-center hover:bg-red-500 transition-colors"
+      >
+        <span className="material-symbols-outlined text-[14px]">close</span>
+      </button>
+    )}
+  </div>
+  
+  <div className="flex justify-between items-center mt-1.5">
+    <p className="text-[11px] text-gray-400 font-medium">Optionnel</p>
+    <p className="text-[11px] font-bold text-gray-400">{text.length}/200</p>
+  </div>
+</div>
               </div>
 
               {/* SECTION DES TOTAUX */}
