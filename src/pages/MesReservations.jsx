@@ -4,6 +4,18 @@ import axiosInstance from "../api/axios";
 const formatPrice = (price) =>
   `${Number(price || 0).toFixed(2).replace(".", ",")} DH`;
 
+const formatDate = (date) => {
+  if (!date) return "Date indisponible";
+
+  const parsedDate = new Date(date.replace(" ", "T"));
+  if (Number.isNaN(parsedDate.getTime())) return date;
+
+  return new Intl.DateTimeFormat("fr-FR", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(parsedDate);
+};
+
 function EmptyReservations() {
   return (
     <div className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-gray-200 bg-white px-6 py-16 text-center shadow-sm">
@@ -58,6 +70,24 @@ function ReservationCard({ commande }) {
                 {commande.nombre_personnes === 1 ? "" : "s"}
               </p>
             )}
+            <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs font-medium text-gray-500">
+              {commande.etablissment && (
+                <span className="flex items-center gap-1">
+                  <span className="material-symbols-outlined text-sm">
+                    restaurant
+                  </span>
+                  {commande.etablissment}
+                </span>
+              )}
+              {commande.date_commande && (
+                <span className="flex items-center gap-1">
+                  <span className="material-symbols-outlined text-sm">
+                    schedule
+                  </span>
+                  {formatDate(commande.date_commande)}
+                </span>
+              )}
+            </div>
           </div>
         </div>
         <span className="w-fit rounded-full bg-teal-50 px-3 py-1.5 text-xs font-black text-teal-700">
@@ -84,6 +114,14 @@ function ReservationCard({ commande }) {
                   </span>
                   {article.nom}
                 </p>
+                {article.created_at && (
+                  <p className="mt-1 flex items-center gap-1 text-xs font-medium text-gray-400">
+                    <span className="material-symbols-outlined text-sm">
+                      schedule
+                    </span>
+                    {formatDate(article.created_at)}
+                  </p>
+                )}
                 {article.instructions_speciales && (
                   <p className="mt-1 text-xs font-medium text-gray-500">
                     Note : {article.instructions_speciales}
@@ -158,7 +196,7 @@ export default function MesReservations() {
                 <span className="material-symbols-outlined text-lg text-teal-700">
                   receipt_long
                 </span>
-                {commandes.length} réservation{commandes.length === 1 ? "" : "s"}
+                {commandes.length} commande{commandes.length === 1 ? "" : "s"}
               </div>
             )}
           </div>
