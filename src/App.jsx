@@ -12,6 +12,7 @@ import AddEtablissment from "./pages/AddEtablissment";
 import DashboardGarant from "./pages/DashboardGarant";
 import DashboardAdmin from "./pages/DashboardAdmin";
 import AllEtablissment from "./pages/AllEtablissment";
+import MesReservations from "./pages/MesReservations";
 
 function App() {
  
@@ -24,6 +25,7 @@ function App() {
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword/>} />
       <Route path="/" element={<Dashboard/>}/>
+      <Route path="/MesReservations" element={<MesReservations/>}/>
       <Route path="/allEtablissments" element={<AllEtablissment/>}/>
       <Route path="/dashboardGarant" element={<DashboardGarant/>}/>
       <Route path="/dashboardAdmin" element={<DashboardAdmin/>}/>

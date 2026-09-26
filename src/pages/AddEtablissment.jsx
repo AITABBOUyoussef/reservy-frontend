@@ -23,7 +23,8 @@ export default function AddEtablissment() {
     setErrorMessage('');
     setIsLoading(true);
 
-    try {  const response = await axiosInstance.post('/CreeEtablissement', {
+    try {  
+      const response = await axiosInstance.post('/CreeEtablissement', {
        
         nom: nom,
         description: description,
@@ -31,8 +32,7 @@ export default function AddEtablissment() {
         ville: ville,
         telephone: telephone
       });
-
-     
+               
       navigate('/dashboardGarant'); 
       
     } catch (error) {
