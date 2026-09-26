@@ -30,6 +30,7 @@ const TrashIcon = () => (
 export default function Etablissment() {
   const { id } = useParams();
   const [etablissement, setEtablissement] = useState(null);
+  const [text, setText] = useState(null);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState('ALL');
   
@@ -69,15 +70,23 @@ export default function Etablissment() {
     });
   };
 
-  // Ajouter Table (Fix: st3mlna places_reservees bach n7afdou 3la capacite l-asliya)
-  const addTablToCart = (tabl) => {
-    setCartTabl((prev) => {
-      const existsTabl = prev.find((item) => item.id === tabl.id);
-      if (existsTabl) return prev; 
+// Ajouter Table - ghir wehda مسموحة
+const addTablToCart = (tabl) => {
+  setCartTabl((prev) => {
+    const existsTabl = prev.find((item) => item.id === tabl.id);
+    if (existsTabl) return prev; 
+
+    if (prev.length >= 1) {
+        return [{ ...tabl, places_reservees: 1, date_reservation: '', heure_reservation:''  }];
       
-      return [...prev, { ...tabl, places_reservees: 1, date_reservation: '', heure_reservation: '' }];
-    });
-  };
+      // Option 2: ila bghiti t-men3o bla ma t-remplacer, dir hadi:
+      // alert("Ymklek thjez ghir tabla wehda f kol reservation");
+      // return prev;
+    }
+    
+    return [...prev, { ...tabl, places_reservees: 1, date_reservation: '', heure_reservation: '' }];
+  });
+};
 
   // Kol table 3andha date et heure dyalha.
   const updateTableReservation = (tableId, field, value) => {
@@ -127,10 +136,7 @@ export default function Etablissment() {
   const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
 
   const passerCommande = async () => {
-    if (cartTabl.length === 0) {
-      alert('Ajoutez au moins une table pour créer une réservation.');
-      return;
-    }
+  
 
     const tableIncomplete = cartTabl.find((table) => !table.date_reservation || !table.heure_reservation);
     if (tableIncomplete) {
@@ -146,7 +152,7 @@ export default function Etablissment() {
       alert(`Choisissez une date et une heure futures pour la table ${tablePassee.numero}.`);
       return;
     }
-
+if(cartTabl.length>1 || cartTabl.length==1){
     try {
       for (const table of cartTabl) {
         const payload = {
@@ -157,15 +163,52 @@ export default function Etablissment() {
           nombre_personnes: table.places_reservees,
           montant_total: cartTotal,
         };
-        await axiosInstance.post('reservations', payload);
+      const response =  await axiosInstance.post('reservations', payload);
+  if (response.data?.reservation) {
+          console.log(response.data.reservation);
+        }
+       
+for(const prod of cart){
+const command ={  
+  reservation_id : response.data.reservation.id , 
+produit_id : prod.id,
+quantite : prod.quantity,
+instructions_speciales : text,
+};
+  await axiosInstance.post('commande-items', command);
+};
+
       }
       alert('Réservation(s) enregistrée(s) avec succès.');
+      console.log(cart);
       setCartTabl([]);
+      setCart([]);
     } catch (error) {
       console.error('Erreur:', error);
       alert(error.response?.data?.message || 'Erreur lors de la réservation. Vérifiez vos choix.');
     }
-  };
+  }else if(cart.length == 1 || cart.length>1){
+    try{
+for(const prod of cart){
+const command ={  
+ 
+produit_id : prod.id,
+quantite : prod.quantity,
+instructions_speciales : text,
+};
+  await axiosInstance.post('commande-items', command);
+};
+    alert('Réservation(s) enregistrée(s) avec succès.');
+      console.log(cart);
+     
+      setCart([]);
+    } catch (error) {
+      console.error('Erreur:', error);
+      alert(error.response?.data?.message || 'Erreur lors de la réservation. Vérifiez vos choix.');
+    }
+  };}
+
+
 
   if (loading) return <div className="min-h-screen flex items-center justify-center font-bold text-teal-600 bg-gray-50"><span className="material-symbols-outlined animate-spin text-4xl">autorenew</span></div>;
   if (!etablissement) return <div className="min-h-screen flex items-center justify-center text-red-500 font-bold bg-gray-50">Aucun établissement trouvé.</div>;
@@ -272,10 +315,19 @@ export default function Etablissment() {
                           {tbl.capacite}
                         </span>
                       </div>
-                      <button onClick={() => addTablToCart(tbl)} className="w-full py-2 bg-gray-50 group-hover:bg-teal-600 text-gray-700 group-hover:text-white border border-gray-200 group-hover:border-teal-600 text-xs sm:text-sm font-bold rounded-xl transition-colors flex items-center justify-center gap-1.5">
-                        <span className="material-symbols-outlined text-[16px] sm:text-[18px]">event_seat</span>
-                        Réserver
-                      </button>
+                    <button 
+  onClick={() => addTablToCart(tbl)} 
+  disabled={cartTabl.length >= 1 && !cartTabl.find(t => t.id === tbl.id)}
+  className={`w-full py-2 text-xs sm:text-sm font-bold rounded-xl transition-colors flex items-center justify-center gap-1.5 border
+    ${cartTabl.find(t => t.id === tbl.id) 
+      ? 'bg-teal-600 text-white border-teal-600' 
+      : cartTabl.length >= 1 
+        ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed' 
+        : 'bg-gray-50 group-hover:bg-teal-600 text-gray-700 group-hover:text-white border-gray-200 group-hover:border-teal-600'}`}
+>
+  <span className="material-symbols-outlined text-[16px] sm:text-[18px]">event_seat</span>
+  {cartTabl.find(t => t.id === tbl.id) ? 'Sélectionnée' : cartTabl.length >= 1 ? 'Une seule table' : 'Réserver'}
+</button>
                     </div>
                   ))}
                 </div>
@@ -462,6 +514,10 @@ export default function Etablissment() {
                     })}
                   </>
                 )}
+                <div> 
+                  <input type="text" name="xxxxxx"  value={text}
+                onChange={(e) => setText(e.target.value)}/>
+                </div>
               </div>
 
               {/* SECTION DES TOTAUX */}
