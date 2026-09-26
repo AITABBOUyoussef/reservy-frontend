@@ -130,7 +130,7 @@ export default function Navbar() {
             )}
 
             {(token && userRole === 'client') && (
-              <Link to="/" className="text-base font-bold text-gray-800 flex items-center gap-3">
+              <Link to="/MesReservations" className="text-base font-bold text-gray-800 flex items-center gap-3">
                 <span className="material-symbols-outlined text-gray-400">event_seat</span> Mes Réservations
               </Link>
             )}

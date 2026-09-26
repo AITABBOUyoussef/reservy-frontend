@@ -1,157 +1,200 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import axiosInstance from "../api/axios";
-import Navbar from "../components/Navbar"
-import { getImageUrl } from '../utils/imageUrl';
-;
 
-export default function MesReservations() {
-  const [reservations, setReservations] = useState([]);
-  const [reservationsDobl, setReservationsDobl] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const navigate = useNavigate();
+const formatPrice = (price) =>
+  `${Number(price || 0).toFixed(2).replace(".", ",")} DH`;
 
-  const fetchReservations = async () => {
-    try {
-      const response = await axiosInstance.get('/reservations');
-      if (response.data && response.data.reservations) {
-        setReservations(response.data.reservations);
-      }
-    } catch (error) {
-      console.error("Erreur lors de la récupération:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+function EmptyReservations() {
+  return (
+    <div className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-gray-200 bg-white px-6 py-16 text-center shadow-sm">
+      <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-teal-50 text-teal-700">
+        <span className="material-symbols-outlined text-4xl">event_busy</span>
+      </div>
+      <h2 className="text-xl font-black text-gray-900">
+        Aucune réservation pour le moment
+      </h2>
+      <p className="mt-2 max-w-md text-sm leading-6 text-gray-500">
+        Vos réservations et commandes apparaîtront ici dès que vous aurez
+        réservé une table ou commandé un plat.
+      </p>
+    </div>
+  );
+}
 
-  useEffect(() => {
-    fetchReservations();
-  }, []);
-
-  const getStatutStyle = (statut) => {
-    switch(statut) {
-      case 'acceptee': 
-        return 'bg-green-100 text-green-700 border-green-200';
-      case 'refusee': 
-        return 'bg-red-100 text-red-700 border-red-200';
-      case 'en_attente': 
-        return 'bg-amber-100 text-amber-700 border-amber-200';
-      default: 
-        return 'bg-gray-100 text-gray-700 border-gray-200';
-    }
-  };
-
-  const handNav = (id) => navigate(`/etablissment/${id}`);
+function ReservationCard({ commande }) {
+  const isDineIn = commande.type_commande === "sur_place";
+  const articles = Array.isArray(commande.articles) ? commande.articles : [];
 
   return (
-    <div className="bg-gray-50 min-h-screen font-sans text-gray-900 antialiased">
-      <Navbar />
+    <article className="overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-sm transition-shadow hover:shadow-md">
+      <div className="flex flex-col gap-4 border-b border-gray-100 p-5 sm:flex-row sm:items-start sm:justify-between sm:p-6">
+        <div className="flex items-start gap-4">
+          <div
+            className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ${
+              isDineIn
+                ? "bg-teal-50 text-teal-700"
+                : "bg-amber-50 text-amber-700"
+            }`}
+          >
+            <span className="material-symbols-outlined text-2xl">
+              {isDineIn ? "table_restaurant" : "shopping_bag"}
+            </span>
+          </div>
+          <div>
+            <p className="text-xs font-black uppercase tracking-wider text-gray-400">
+              {isDineIn ? "Réservation sur place" : "Commande à emporter"}
+            </p>
+            <h2 className="mt-1 text-lg font-black text-gray-900">
+              {isDineIn
+                ? `Table ${commande.table_id ?? "—"}`
+                : "Commande à emporter"}
+            </h2>
+            {isDineIn && (
+              <p className="mt-1 flex items-center gap-1.5 text-sm font-medium text-gray-500">
+                <span className="material-symbols-outlined text-base">
+                  group
+                </span>
+                {commande.nombre_personnes ?? 0} personne
+                {commande.nombre_personnes === 1 ? "" : "s"}
+              </p>
+            )}
+          </div>
+        </div>
+        <span className="w-fit rounded-full bg-teal-50 px-3 py-1.5 text-xs font-black text-teal-700">
+          Confirmée
+        </span>
+      </div>
 
-      <main className="w-full pt-20">
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 w-full">
-          <h2 className="text-2xl font-black text-gray-900 mb-8 flex items-center gap-2">
-            Mes Réservations
-          </h2>
+      <div className="space-y-3 p-5 sm:p-6">
+        <div className="flex items-center justify-between text-xs font-black uppercase tracking-wider text-gray-400">
+          <span>Articles</span>
+          <span>{articles.length} article{articles.length === 1 ? "" : "s"}</span>
+        </div>
 
-          {loading ? (
-            <div className="flex justify-center items-center py-20">
-              <span className="material-symbols-outlined animate-spin text-teal-600 text-4xl">autorenew</span>
+        <div className="divide-y divide-gray-100 rounded-2xl bg-gray-50 px-4">
+          {articles.map((article) => (
+            <div
+              key={article.id_ligne}
+              className="flex items-start justify-between gap-4 py-3"
+            >
+              <div className="min-w-0">
+                <p className="truncate text-sm font-bold text-gray-800">
+                  <span className="mr-2 text-teal-700">
+                    {article.quantite}×
+                  </span>
+                  {article.nom}
+                </p>
+                {article.instructions_speciales && (
+                  <p className="mt-1 text-xs font-medium text-gray-500">
+                    Note : {article.instructions_speciales}
+                  </p>
+                )}
+              </div>
+              <span className="shrink-0 text-sm font-bold text-gray-700">
+                {formatPrice(article.prix_total)}
+              </span>
             </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {reservations.length > 0 ? (
-                reservations.map((res) => {
-                   const nomRestaurant = res.etablissement.nom 
-                  const ville = res.etablissement.ville ;
-                  const dateReservation = res.date_reservation;
-                  const heureReservation = res.heure_reservation;
-                  const nombrePersonnes = res.nombre_personnes;
-                  const montantTotal = res.montant_total;
-                  const numeroTable = res.table?.numero || "?";
-                  const statut = res.statut;
-                  const img = res.etablissement.images[0].nom_image;
-// {
-//   if(){
-    
-//   }
-// }
-               console.log(dateReservation);
+          ))}
+        </div>
 
-                  return (
-                    <div key={res.id} onClick={() => handNav(res.etablissement?.id)} className="bg-white rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-all overflow-hidden flex flex-col cursor-pointer group">
-                      
-                      {/* Image w Statut l-fo9 */}
-                      <div className="relative h-40 bg-gray-200 overflow-hidden">
-                        <img 
-                           src={getImageUrl(img)} alt='zz'
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
-                        />
-                        <div className="absolute top-3 right-3">
-                          <span className={`text-xs font-bold px-3 py-1.5 rounded-full shadow-sm border uppercase tracking-wider ${getStatutStyle(statut)}`}>
-                            {statut.replace('_', ' ')}
-                          </span>
-                        </div>
-                      </div>
+        <div className="flex items-center justify-between border-t border-gray-100 pt-4">
+          <span className="text-sm font-bold text-gray-500">Total</span>
+          <span className="text-lg font-black text-gray-900">
+            {formatPrice(commande.total_commande)}
+          </span>
+        </div>
+      </div>
+    </article>
+  );
+}
 
-                      {/* Ma3loumat l-asasiya */}
-                      <div className="p-5 flex flex-col flex-1">
-                        <h3 className="text-xl font-black text-gray-900 mb-1 line-clamp-1 group-hover:text-teal-700 transition-colors">
-                          {nomRestaurant}
-                        </h3>
-                        <p className="text-sm text-gray-500 mb-4 flex items-center gap-1">
-                          <span className="material-symbols-outlined text-[16px]">location_on</span>
-                          {ville}
-                        </p>
+export default function MesReservations() {
+  const [commandes, setCommandes] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState("");
 
-                        {/* Détails dyal la réservation */}
-                        <div className="bg-gray-50 rounded-xl p-4 mb-5 space-y-3 border border-gray-100">
-                          <div className="flex items-center justify-between text-sm text-gray-700 font-medium">
-                            <div className="flex items-center gap-2">
-                              <span className="material-symbols-outlined text-teal-600 text-[18px]">calendar_month</span>
-                              <span>{dateReservation}</span>
-                            </div>
-                            <span className="font-bold text-gray-900">{heureReservation.substring(0, 5)}</span>
-                          </div>
-                          
-                          <div className="flex items-center justify-between text-sm text-gray-700 font-medium">
-                            <div className="flex items-center gap-2">
-                              <span className="material-symbols-outlined text-teal-600 text-[18px]">group</span>
-                              <span>{nombrePersonnes} personne(s)</span>
-                            </div>
-                            <div className="flex items-center gap-1.5 bg-white border border-gray-200 px-2 py-0.5 rounded-md shadow-sm text-xs font-bold">
-                              <span className="material-symbols-outlined text-teal-600 text-[14px]">table_restaurant</span>
-                              N° {numeroTable}
-                            </div>
-                          </div>
-                        </div>
+  useEffect(() => {
+    const fetchCommandes = async () => {
+      try {
+        const response = await axiosInstance.get("/Mescommandes");
+        setCommandes(
+          Array.isArray(response.data?.MesCommande)
+            ? response.data.MesCommande
+            : []
+        );
+      } catch (error) {
+        console.error("Erreur de récupération des réservations :", error);
+        setErrorMessage(
+          error.response?.data?.message ||
+            "Impossible de charger vos réservations. Veuillez réessayer."
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
 
-                        {/* Footer dyal l-carte: Prix w Bouton */}
-                        <div className="mt-auto pt-4 border-t border-gray-100 flex items-center justify-between">
-                          <div>
-                            <p className="text-xs text-gray-500 font-bold uppercase mb-0.5">Total</p>
-                            <p className="text-lg font-black text-teal-700">{Number(montantTotal).toFixed(2)} DH</p>
-                          </div>
-                          <button className="bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 hover:text-teal-600 px-4 py-2 rounded-xl text-sm font-bold transition-colors shadow-sm flex items-center gap-2">
-                            Détails
-                            <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
-                          </button>
-                        </div>
-                      </div>
-                      
-                    </div>
-                  );
-                })
-              ) : (
-                <div className="col-span-full text-center py-16 bg-white rounded-3xl border border-dashed border-gray-200">
-                  <span className="material-symbols-outlined text-gray-300 text-6xl mb-4">event_busy</span>
-                  <h3 className="text-xl font-bold text-gray-800 mb-2">Aucune réservation</h3>
-                  <p className="text-gray-500">Vous n'avez pas encore effectué de réservation.</p>
-                </div>
-              )}
+    fetchCommandes();
+  }, []);
+
+  return (
+    <main className="min-h-screen bg-gray-50 pt-20 font-sans text-gray-900 antialiased">
+      <section className="border-b border-gray-100 bg-white px-4 py-10 sm:px-6 sm:py-14">
+        <div className="mx-auto max-w-7xl">
+          <p className="mb-2 text-sm font-black uppercase tracking-widest text-teal-600">
+            Votre espace
+          </p>
+          <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+            <div>
+              <h1 className="text-3xl font-black tracking-tight text-gray-900 sm:text-4xl">
+                Mes réservations
+              </h1>
+              <p className="mt-2 max-w-xl text-sm leading-6 text-gray-500 sm:text-base">
+                Retrouvez toutes vos réservations et commandes en un seul
+                endroit.
+              </p>
             </div>
-          )}
-        </section>
-      </main>
-    </div>
+            {!loading && !errorMessage && commandes.length > 0 && (
+              <div className="flex w-fit items-center gap-2 rounded-full bg-gray-100 px-4 py-2 text-sm font-bold text-gray-600">
+                <span className="material-symbols-outlined text-lg text-teal-700">
+                  receipt_long
+                </span>
+                {commandes.length} réservation{commandes.length === 1 ? "" : "s"}
+              </div>
+            )}
+          </div>
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-12">
+        {loading && (
+          <div className="flex min-h-64 items-center justify-center rounded-3xl bg-white">
+            <span className="material-symbols-outlined animate-spin text-4xl text-teal-600">
+              autorenew
+            </span>
+          </div>
+        )}
+
+        {!loading && errorMessage && (
+          <div className="rounded-2xl border border-red-100 bg-red-50 p-5 text-center text-sm font-bold text-red-600">
+            {errorMessage}
+          </div>
+        )}
+
+        {!loading && !errorMessage && commandes.length === 0 && (
+          <EmptyReservations />
+        )}
+
+        {!loading && !errorMessage && commandes.length > 0 && (
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+            {commandes.map((commande) => (
+              <ReservationCard
+                key={commande.id_commande}
+                commande={commande}
+              />
+            ))}
+          </div>
+        )}
+      </section>
+    </main>
   );
 }
