@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axiosInstance from "../api/axios";
+import AuthShell from "../components/AuthShell";
 
 export default function ForgotPassword() {
     const [email, setEmail] = useState('');
@@ -17,7 +18,7 @@ export default function ForgotPassword() {
 
         try {
             const response = await axiosInstance.post('/forgot-password', { email });
-            setMessage(response.data.message); // "Le lien a été envoyé..."
+            setMessage(response.data.message);
         } catch (error) {
             if (error.response?.data?.errors?.email) {
                 setErrorMessage(error.response.data.errors.email[0]);
@@ -32,26 +33,19 @@ export default function ForgotPassword() {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-[#f8f9fa] font-sans p-4">
-            <div className="w-full max-w-md bg-white rounded-2xl shadow-sm p-8 sm:p-10">
-                <h2 className="text-2xl font-bold text-gray-800 mb-2">Mot de passe oublié ?</h2>
-                <p className="text-sm text-gray-500 mb-6">
-                    Entrez votre adresse e-mail et nous vous enverrons un lien pour réinitialiser votre mot de passe.
-                </p>
-
-                {message && <div className="mb-4 bg-green-50 text-green-700 p-3 rounded-lg text-sm font-medium">{message}</div>}
-                {errorMessage && <div className="mb-4 bg-red-50 text-red-600 p-3 rounded-lg text-sm font-medium">{errorMessage}</div>}
-
+        <AuthShell title="Mot de passe oublié ?" subtitle="Entrez votre adresse e-mail pour recevoir un lien de réinitialisation.">
+                {message && <div className="mb-4 rounded-xl border border-emerald-100 bg-emerald-50 p-3 text-sm font-semibold text-emerald-700">{message}</div>}
+                {errorMessage && <div className="mb-4 rounded-xl border border-red-100 bg-red-50 p-3 text-sm font-semibold text-red-600">{errorMessage}</div>}
                 <form onSubmit={handleSubmit} className="space-y-5">
                     <div>
-                        <label className="block text-xs font-bold text-gray-700 mb-2">Email Address</label>
+                        <label className="mb-2 block text-xs font-black uppercase tracking-wider text-slate-500">Adresse e-mail</label>
                         <input
                             type="email"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             required
                             placeholder="hello@reservy.com"
-                            className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-1 focus:ring-[#b04121] focus:border-[#b04121] outline-none transition-all text-sm"
+                            className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none transition focus:border-teal-500 focus:bg-white focus:ring-2 focus:ring-teal-100"
                         />
                     </div>
 
@@ -59,7 +53,7 @@ export default function ForgotPassword() {
                         <button
                             type="submit"
                             disabled={isLoading}
-                            className={`w-full text-white font-bold py-3.5 rounded-lg transition-colors text-sm ${isLoading ? 'bg-gray-400' : 'bg-[#b04121] hover:bg-[#8e341a]'}`}
+                            className="w-full rounded-xl bg-teal-600 py-3.5 text-sm font-black text-white transition hover:bg-teal-700 disabled:cursor-not-allowed disabled:bg-slate-300"
                         >
                             {isLoading ? 'Envoi en cours...' : 'Envoyer le lien'}
                         </button>
@@ -69,12 +63,11 @@ export default function ForgotPassword() {
                 <div className="mt-6 text-center">
                     <button 
                         onClick={() => navigate('/login')}
-                        className="text-sm font-semibold text-gray-500 hover:text-gray-700 transition-colors"
+                        className="text-sm font-bold text-slate-500 transition hover:text-teal-700"
                     >
                         &larr; Retour à la connexion
                     </button>
                 </div>
-            </div>
-        </div>
+            </AuthShell>
     );
 }

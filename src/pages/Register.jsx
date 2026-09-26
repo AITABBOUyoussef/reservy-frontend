@@ -3,6 +3,8 @@ import { useNavigate, Link } from "react-router-dom";
 import axiosInstance from "../api/axios";
 import { useGoogleLogin } from '@react-oauth/google';
 
+const googleLoginAvailable = Boolean(import.meta.env.VITE_GOOGLE_CLIENT_ID);
+
 export default function Register() {
     const [name , setName] = useState('');
     const [email, setEmail] = useState('');
@@ -11,7 +13,6 @@ export default function Register() {
     const [errorMessage, setErrorMessage] = useState('');
     const navigate = useNavigate();
 
-    // ================= LOGIC: REGISTER CLASSIQUE =================
     const handleRegister = async (e) =>{
         e.preventDefault();
         setErrorMessage('');
@@ -27,6 +28,7 @@ export default function Register() {
 
             localStorage.setItem('token', token);
             localStorage.setItem('user', JSON.stringify(user));
+            localStorage.setItem('role', response.data.role);
             navigate('/');
         }catch (error) {
             if (error.response?.data?.errors?.email) {
@@ -42,7 +44,6 @@ export default function Register() {
         }
     };
 
-    // ================= LOGIC: GOOGLE LOGIN / REGISTER =================
     const handleGoogleLogin = useGoogleLogin({
         onSuccess: async (tokenResponse) => {
             try {
@@ -52,37 +53,33 @@ export default function Register() {
 
                 localStorage.setItem('token', response.data.token);
                 localStorage.setItem('user', JSON.stringify(response.data.user));
+                localStorage.setItem('role', response.data.role);
                 
                 axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${response.data.token}`;
                 window.location.href = '/profil';
 
             } catch (error) {
-                console.error("Erreur connexion sur lbackend:", error);
+                setErrorMessage(error.response?.data?.message || "La connexion avec Google a échoué.");
             }
         },
-        onError: errorResponse => console.log("Erreur Google:", errorResponse),
+        onError: () => setErrorMessage("La connexion avec Google a été annulée ou a échoué."),
     });
 
-    // ================= RENDU (DESIGN) =================
     return (
         <div className="min-h-screen flex bg-gray-50 font-sans text-gray-900 antialiased">
             
-            {/* L'Jiha d Lisser (Tswira, Katban ghir f PC w Tablette) */}
             <div className="hidden lg:flex w-1/2 relative bg-cover bg-center overflow-hidden" style={{ backgroundImage: "url('https://images.unsplash.com/photo-1556910103-1c02745aae4d?q=80&w=2070&auto=format&fit=crop')" }}>
                 <div className="absolute inset-0 bg-teal-900/40 mix-blend-multiply"></div>
                 <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/20 to-transparent"></div>
                 
-                {/* Text fo9 Tswira */}
                 <div className="absolute bottom-12 left-12 right-12 bg-white/10 backdrop-blur-md border border-white/20 p-8 rounded-3xl shadow-2xl z-10">
                     <h1 className="text-white text-5xl font-black mb-3 tracking-tight">Reservy</h1>
                     <p className="text-gray-200 text-lg font-medium leading-relaxed">Rejoignez-nous et réservez les meilleures tables. Votre aventure gastronomique commence ici.</p>
                 </div>
             </div>
 
-            {/* L'Jiha d Limen (Formulaire) */}
             <div className="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-12 relative">
                 
-                {/* Bouton Retour Accueil */}
                 <Link to="/" className="absolute top-6 left-6 text-gray-400 hover:text-teal-600 flex items-center gap-2 font-bold transition-colors">
                     <span className="material-symbols-outlined text-[20px]">arrow_back</span>
                     <span className="hidden sm:inline">Retour</span>
@@ -90,7 +87,6 @@ export default function Register() {
 
                 <div className="w-full max-w-md bg-white rounded-3xl shadow-xl shadow-gray-200/50 p-8 sm:p-10 border border-gray-100 mt-8 sm:mt-0">
                     
-                    {/* Les Tabs (Connexion / Inscription) */}
                     <div className="flex w-full border-b border-gray-100 mb-8">
                         <button 
                             onClick={() => navigate('/login')}
@@ -103,7 +99,6 @@ export default function Register() {
                         </button>
                     </div>
 
-                    {/* Message d'erreur */}
                     {errorMessage && (
                         <div className="mb-6 bg-red-50 text-red-600 p-3.5 rounded-xl text-sm font-bold text-center border border-red-100 flex items-center justify-center gap-2">
                             <span className="material-symbols-outlined text-[18px] shrink-0">error</span>
@@ -111,7 +106,6 @@ export default function Register() {
                         </div>
                     )}
 
-                    {/* Formulaire classique */}
                     <form onSubmit={handleRegister} className="space-y-4">
                         
                         <div>
@@ -185,7 +179,8 @@ export default function Register() {
                         <button 
                             type="button" 
                             onClick={() => handleGoogleLogin()} 
-                            className="w-full flex justify-center items-center gap-3 bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 text-sm font-bold py-3.5 px-4 rounded-full transition-all shadow-sm hover:shadow-md"
+                            disabled={!googleLoginAvailable}
+                            className="w-full flex justify-center items-center gap-3 bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 text-sm font-bold py-3.5 px-4 rounded-full transition-all shadow-sm hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50"
                         >
                             <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24">
                                 <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -193,7 +188,7 @@ export default function Register() {
                                 <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
                                 <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
                             </svg>
-                            S'inscrire avec Google
+                            {googleLoginAvailable ? "S'inscrire avec Google" : 'Inscription Google indisponible'}
                         </button>
                     </div>
                 </div>

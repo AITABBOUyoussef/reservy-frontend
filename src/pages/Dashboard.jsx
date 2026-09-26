@@ -79,10 +79,19 @@ export default function Dashboard() {
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
               {etablissements.length > 0 ? (
-                etablissements.map((etab) => (
+                etablissements.map((etab) => {
+                  const cover = etab.images?.find((image) => image.est_principale) || etab.images?.[0];
+
+                  return (
                   <div onClick={() => handNav(etab.id)} key={etab.id} className="group cursor-pointer flex flex-col gap-3">
                     <div className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden bg-gray-200 shadow-sm">
-                      <img className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" src={getImageUrl(etab.nom_image)} alt={etab.nom} />
+                      {cover ? (
+                        <img className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" src={getImageUrl(cover.nom_image)} alt={etab.nom} />
+                      ) : (
+                        <div className="h-full w-full bg-gradient-to-br from-teal-600 to-slate-900 flex items-center justify-center">
+                          <span className="material-symbols-outlined text-white text-5xl opacity-70">restaurant</span>
+                        </div>
+                      )}
                       <span className="absolute top-3 left-3 bg-red-500 text-white text-[10px] uppercase font-black px-2.5 py-1 rounded-md shadow-sm">Nouveau</span>
                     </div>
 
@@ -109,7 +118,8 @@ export default function Dashboard() {
                       </div>
                     </div>
                   </div>
-                ))
+                  );
+                })
               ) : (
                 <p className="col-span-full text-center text-gray-500 py-12 bg-gray-50 rounded-2xl border border-dashed border-gray-200 font-medium">Aucun établissement trouvé.</p>
               )}

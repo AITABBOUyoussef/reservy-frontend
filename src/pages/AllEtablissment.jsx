@@ -24,6 +24,8 @@ export default function AllEtablissment() {
 
 
   useEffect(() => {
+    // Le chargement asynchrone synchronise l’état avec l’API.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchEtablissements();
   }, []);
 
@@ -128,8 +130,8 @@ export default function AllEtablissment() {
                     onClick={() => handNav(etab.id)}
                     className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg font-bold text-teal-700 bg-teal-50 border border-teal-200 hover:bg-teal-100 transition-all"
                   >
-                    <span className="material-symbols-outlined text-[18px]">edit</span>
-                    Modifier
+                    <span className="material-symbols-outlined text-[18px]">visibility</span>
+                    Détails
                   </button>
                   
                   <button

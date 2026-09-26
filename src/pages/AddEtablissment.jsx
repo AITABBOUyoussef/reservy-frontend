@@ -4,9 +4,6 @@ import axiosInstance from "../api/axios";
 import Navbar from "../components/Navbar"; 
 
 export default function AddEtablissment() {
-  const user = JSON.parse(localStorage.getItem("user") || "null");
- 
-
   const [nom, setNom] = useState('');
   const [description, setDescription] = useState('');
   const [adresse, setAdresse] = useState('');
@@ -24,7 +21,7 @@ export default function AddEtablissment() {
     setIsLoading(true);
 
     try {  
-      const response = await axiosInstance.post('/CreeEtablissement', {
+      await axiosInstance.post('/CreeEtablissement', {
        
         nom: nom,
         description: description,

@@ -1,5 +1,4 @@
 import { useState } from "react";
-// import { useNavigate } from "react-router-dom";
 import axiosInstance from "../api/axios";
 import { getImageUrl } from "../utils/imageUrl";
 
@@ -65,9 +64,8 @@ const editProfil = async (e) =>{
 };
 
    return (
-    <div className="min-h-screen flex bg-[#f8f9fa] font-sans">
+    <div className="min-h-screen flex bg-slate-50 font-sans">
         
-        {/* L'Jiha d Lisser (Tswira w l'Glassmorphism) */}
         <div className="hidden lg:flex w-1/2 relative bg-cover bg-center" style={{ backgroundImage: "url('https://images.unsplash.com/photo-1554118811-1e0d58224f24?q=80&w=2047&auto=format&fit=crop')" }}>
             <div className="absolute bottom-12 left-12 right-12 bg-white/20 backdrop-blur-md border border-white/30 p-8 rounded-2xl shadow-lg">
                 <h1 className="text-white text-4xl font-bold mb-2">Reservy</h1>
@@ -75,7 +73,6 @@ const editProfil = async (e) =>{
             </div>
         </div>
 
-        {/* L'Jiha d Limen (Formulaire Profil) */}
         <div className="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-12 overflow-y-auto">
             <div className="w-full max-w-lg bg-white rounded-2xl shadow-sm p-8 sm:p-10 my-8">
                 
@@ -95,7 +92,7 @@ const editProfil = async (e) =>{
                 <form onSubmit={editProfil} className="space-y-4">
                     {/* Avatar Upload Preview */}
                         <div className="flex items-center gap-4 p-3 bg-gray-50 rounded-xl border border-dashed border-gray-300">
-                            <div className="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center overflow-hidden border border-emerald-300 shrink-0">
+                            <div className="w-16 h-16 rounded-full bg-teal-100 flex items-center justify-center overflow-hidden border border-teal-200 shrink-0">
                                 {previewAvatar ? (
                                     <img src={previewAvatar} alt="Preview" className="w-full h-full object-cover" />
                                 ) : (
@@ -110,7 +107,7 @@ const editProfil = async (e) =>{
                                     type="file"
                                     accept="image/*"
                                     onChange={handleAvatarChange}
-                                    className="block w-full text-xs text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-[#b04121] file:text-white hover:file:bg-[#8e341a] cursor-pointer"
+                                    className="block w-full text-xs text-slate-500 file:mr-3 file:rounded-lg file:border-0 file:bg-teal-600 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-white hover:file:bg-teal-700"
                                 />
                             </div>
                         </div>
@@ -123,7 +120,7 @@ const editProfil = async (e) =>{
                             onChange={(e) => setName(e.target.value)}
                             required
                             placeholder="Votre nom"
-                            className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-1 focus:ring-[#b04121] focus:border-[#b04121] outline-none text-sm transition-all"
+                            className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm outline-none transition-all focus:border-teal-500 focus:bg-white focus:ring-2 focus:ring-teal-100"
                         />
                     </div>
 
@@ -136,7 +133,7 @@ const editProfil = async (e) =>{
                             onChange={(e) => setEmail(e.target.value)}
                             required
                             placeholder="nom@exemple.com"
-                            className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-1 focus:ring-[#b04121] focus:border-[#b04121] outline-none text-sm transition-all"
+                            className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm outline-none transition-all focus:border-teal-500 focus:bg-white focus:ring-2 focus:ring-teal-100"
                         />
                     </div>
 
@@ -149,7 +146,7 @@ const editProfil = async (e) =>{
                                 value={phone}
                                 onChange={(e) => setPhone(e.target.value)}
                                 placeholder="06 12 34 56 78"
-                                className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-1 focus:ring-[#b04121] focus:border-[#b04121] outline-none text-sm transition-all"
+                                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm outline-none transition-all focus:border-teal-500 focus:bg-white focus:ring-2 focus:ring-teal-100"
                             />
                         </div>
                      
@@ -167,7 +164,7 @@ const editProfil = async (e) =>{
                                 value={oldPassword}
                                 onChange={(e) => setOldPassword(e.target.value)}
                                 placeholder="••••••••"
-                                className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-1 focus:ring-[#b04121] focus:border-[#b04121] outline-none text-sm tracking-widest transition-all"
+                                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm tracking-widest outline-none transition-all focus:border-teal-500 focus:bg-white focus:ring-2 focus:ring-teal-100"
                             />
                         </div>
 
@@ -180,7 +177,7 @@ const editProfil = async (e) =>{
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
                                     placeholder="••••••••"
-                                    className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-1 focus:ring-[#b04121] focus:border-[#b04121] outline-none text-sm tracking-widest transition-all"
+                                    className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm tracking-widest outline-none transition-all focus:border-teal-500 focus:bg-white focus:ring-2 focus:ring-teal-100"
                                 />
                             </div>
                             <div>
@@ -190,7 +187,7 @@ const editProfil = async (e) =>{
                                     value={passwordConfirmation}
                                     onChange={(e) => setPasswordConfirmation(e.target.value)}
                                     placeholder="••••••••"
-                                    className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-1 focus:ring-[#b04121] focus:border-[#b04121] outline-none text-sm tracking-widest transition-all"
+                                    className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm tracking-widest outline-none transition-all focus:border-teal-500 focus:bg-white focus:ring-2 focus:ring-teal-100"
                                 />
                             </div>
                         </div>
@@ -203,7 +200,7 @@ const editProfil = async (e) =>{
                             id="logout_devices"
                             checked={Boolean(logoutDevices)}
                             onChange={(e) => setLogoutDevices(e.target.checked)}
-                            className="w-4 h-4 text-[#b04121] border-gray-300 rounded focus:ring-[#b04121]"
+                            className="h-4 w-4 rounded border-slate-300 text-teal-600 focus:ring-teal-500"
                         />
                         <label htmlFor="logout_devices" className="text-xs font-medium text-gray-600 select-none">
                             Déconnecter les autres appareils
@@ -214,7 +211,7 @@ const editProfil = async (e) =>{
                     <div className="pt-4">
                         <button
                             type="submit"
-                            className="w-full bg-[#b04121] hover:bg-[#8e341a] text-white font-bold py-3.5 rounded-lg transition-colors text-sm shadow-sm"
+                            className="w-full rounded-xl bg-teal-600 py-3.5 text-sm font-black text-white shadow-sm transition-colors hover:bg-teal-700"
                         >
                             Enregistrer les modifications
                         </button>

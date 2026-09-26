@@ -34,7 +34,6 @@ export default function Etablissment() {
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState('ALL');
   
-  // States dyal l-panier
   const [cart, setCart] = useState([]);
   const [cartTabl, setCartTabl] = useState([]);
   
@@ -61,7 +60,6 @@ export default function Etablissment() {
     if (id) fetchDetails();
   }, [id]);
 
-  // Ajouter Produit
   const addToCart = (produit) => {
     setCart((prev) => {
       const existsProduit = prev.find((item) => item.id === produit.id);  
@@ -70,7 +68,6 @@ export default function Etablissment() {
     });
   };
 
-// Ajouter Table - ghir wehda مسموحة
 const addTablToCart = (tabl) => {
   setCartTabl((prev) => {
     const existsTabl = prev.find((item) => item.id === tabl.id);
@@ -79,16 +76,12 @@ const addTablToCart = (tabl) => {
     if (prev.length >= 1) {
         return [{ ...tabl, places_reservees: 1, date_reservation: '', heure_reservation:''  }];
       
-      // Option 2: ila bghiti t-men3o bla ma t-remplacer, dir hadi:
-      // alert("Ymklek thjez ghir tabla wehda f kol reservation");
-      // return prev;
     }
     
     return [...prev, { ...tabl, places_reservees: 1, date_reservation: '', heure_reservation: '' }];
   });
 };
 
-  // Kol table 3andha date et heure dyalha.
   const updateTableReservation = (tableId, field, value) => {
     setCartTabl((prev) => prev.map((table) => {
       if (table.id !== tableId) return table;
@@ -99,12 +92,10 @@ const addTablToCart = (tabl) => {
     }));
   };
 
-  // Modifier les places dyal t-tabla
   const updateCapacite = (tablId, amount) => {
     setCartTabl((prev) => prev.map((item) => {
       if (item.id === tablId) {
         const newQty = item.places_reservees + amount;
-        // Kants2akdou bli l-blayss ma-yfoutouch l-capacite l-asliya dyal t-tabla
         if (newQty > 0 && newQty <= item.capacite) {
           return { ...item, places_reservees: newQty };
         }
@@ -113,7 +104,6 @@ const addTablToCart = (tabl) => {
     }));
   };
 
-  // Modifier l-qamawat dyal l-produit
   const updateQuantity = (productId, amount) => {
     setCart((prev) => prev.map((item) => {
       if (item.id === productId) {
@@ -130,18 +120,16 @@ const addTablToCart = (tabl) => {
   const cartTotal = cart.reduce((acc, item) => acc + parseFloat(item.prix) * item.quantity, 0);
   const cartTablTotal = cartTabl.reduce((acc, item) => acc + item.places_reservees, 0);
 
-  // Date locale (toISOString utilise UTC et peut donner un autre jour).
   const now = new Date();
   const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
   const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
 
 const passerCommande = async () => {
-  // Cas 1: Kayna tabla wehda + plats (reservation b commande)
   if(cartTabl.length === 1){
     const table = cartTabl[0];
     
     if (!table.date_reservation || !table.heure_reservation) {
-      alert(`Choisissez la date et l\'heure pour la table ${table.numero}.`);
+      alert(`Choisissez la date et l'heure pour la table ${table.numero}.`);
       return;
     }
 
@@ -184,7 +172,7 @@ const passerCommande = async () => {
     return;
   }
 
-  // Cas 2: Ghir plats bla tabla (commande à emporter)
+
   if(cart.length > 0){
     try{
       for(const prod of cart){
@@ -253,6 +241,34 @@ const passerCommande = async () => {
           </div>
         </div>
       </div>
+
+      {etabImages.length > 1 && (
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
+          <div className="flex items-end justify-between mb-4">
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.2em] text-teal-600">Galerie</p>
+              <h2 className="text-2xl font-black text-slate-900">Découvrez l'établissement</h2>
+            </div>
+            <span className="rounded-full bg-white border border-slate-200 px-3 py-1 text-sm font-bold text-slate-500">
+              {etabImages.length} photos
+            </span>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 auto-rows-[140px] sm:auto-rows-[180px]">
+            {etabImages.map((image, index) => (
+              <div
+                key={image.id || image.nom_image}
+                className={`relative overflow-hidden rounded-2xl bg-slate-200 shadow-sm ${index === 0 ? 'col-span-2 row-span-2' : ''}`}
+              >
+                <img
+                  src={getImageUrl(image.nom_image)}
+                  alt={`${etablissement.nom} - photo ${index + 1}`}
+                  className="h-full w-full object-cover transition duration-500 hover:scale-105"
+                />
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 space-y-10">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
@@ -533,7 +549,6 @@ const passerCommande = async () => {
       className="w-full pl-11 pr-10 py-3 bg-gray-50 border border-gray-200 rounded-2xl text-sm font-medium text-gray-900 placeholder:text-gray-400 focus:bg-white focus:border-teal-500 focus:ring-4 focus:ring-teal-500/10 outline-none transition-all resize-none"
     />
 
-    {/* Bouton clear kayban ghir ila ktebti chi haja */}
     {text && (
       <button 
         type="button"

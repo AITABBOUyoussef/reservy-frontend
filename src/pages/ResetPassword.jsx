@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import axiosInstance from "../api/axios";
+import AuthShell from "../components/AuthShell";
 
 export default function ResetPassword() {
-    // Njibo token w email mn l'URL
     const [searchParams] = useSearchParams();
     const email = searchParams.get('email');
     const token = searchParams.get('token');
@@ -38,7 +38,6 @@ export default function ResetPassword() {
             }, 3000);
 
         } catch (error) {
-            // Affichage dyal l'erreurs
             if (error.response?.data?.errors?.password) {
                 setErrorMessage(error.response.data.errors.password[0]);
             } else if (error.response?.data?.message) {
@@ -52,56 +51,44 @@ export default function ResetPassword() {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-[#f8f9fa] font-sans p-4">
-            <div className="w-full max-w-md bg-white rounded-2xl shadow-sm p-8 sm:p-10">
-                <h2 className="text-2xl font-bold text-gray-800 mb-2">Nouveau mot de passe</h2>
-                <p className="text-sm text-gray-500 mb-6">
-                    Veuillez entrer votre nouveau mot de passe pour le compte <strong>{email}</strong>.
-                </p>
-
-                {/* Messages de succès ou d'erreur */}
-                {message && <div className="mb-4 bg-green-50 text-green-700 p-3 rounded-lg text-sm font-medium text-center">{message}</div>}
-                {errorMessage && <div className="mb-4 bg-red-50 text-red-600 p-3 rounded-lg text-sm font-medium text-center">{errorMessage}</div>}
-
+        <AuthShell title="Nouveau mot de passe" subtitle={`Définissez un nouveau mot de passe pour ${email || "votre compte"}.`}>
+                {message && <div className="mb-4 rounded-xl border border-emerald-100 bg-emerald-50 p-3 text-center text-sm font-semibold text-emerald-700">{message}</div>}
+                {errorMessage && <div className="mb-4 rounded-xl border border-red-100 bg-red-50 p-3 text-center text-sm font-semibold text-red-600">{errorMessage}</div>}
                 <form onSubmit={handleSubmit} className="space-y-5">
-                    {/* Input Mot de passe */}
                     <div>
-                        <label className="block text-xs font-bold text-gray-700 mb-2">Nouveau mot de passe</label>
+                        <label className="mb-2 block text-xs font-black uppercase tracking-wider text-slate-500">Nouveau mot de passe</label>
                         <input
                             type="password"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                             required
                             placeholder="••••••••"
-                            className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-1 focus:ring-[#b04121] focus:border-[#b04121] outline-none transition-all text-sm tracking-widest"
+                            className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm tracking-widest outline-none transition focus:border-teal-500 focus:bg-white focus:ring-2 focus:ring-teal-100"
                         />
                     </div>
 
-                    {/* Input Confirmer le mot de passe */}
                     <div>
-                        <label className="block text-xs font-bold text-gray-700 mb-2">Confirmer le mot de passe</label>
+                        <label className="mb-2 block text-xs font-black uppercase tracking-wider text-slate-500">Confirmer le mot de passe</label>
                         <input
                             type="password"
                             value={passwordConfirmation}
                             onChange={(e) => setPasswordConfirmation(e.target.value)}
                             required
                             placeholder="••••••••"
-                            className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-1 focus:ring-[#b04121] focus:border-[#b04121] outline-none transition-all text-sm tracking-widest"
+                            className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm tracking-widest outline-none transition focus:border-teal-500 focus:bg-white focus:ring-2 focus:ring-teal-100"
                         />
                     </div>
 
-                    {/* Bouton de validation */}
                     <div className="pt-2">
                         <button
                             type="submit"
                             disabled={isLoading}
-                            className={`w-full text-white font-bold py-3.5 rounded-lg transition-colors text-sm ${isLoading ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#b04121] hover:bg-[#8e341a]'}`}
+                            className="w-full rounded-xl bg-teal-600 py-3.5 text-sm font-black text-white transition hover:bg-teal-700 disabled:cursor-not-allowed disabled:bg-slate-300"
                         >
                             {isLoading ? 'Modification en cours...' : 'Réinitialiser le mot de passe'}
                         </button>
                     </div>
                 </form>
-            </div>
-        </div>
+        </AuthShell>
     );
 }

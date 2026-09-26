@@ -14,7 +14,12 @@ export default function DashboardGarant() {
 
   const notify = (message, type = 'success') => {
     const id = Date.now();
-    setNotifications(prev => [...prev, { id, message, type }]);
+    setNotifications(prev => {
+      if (prev.some(notification => notification.message === message && notification.type === type)) {
+        return prev;
+      }
+      return [...prev, { id, message, type }];
+    });
     setTimeout(() => {
       setNotifications(prev => prev.filter(n => n.id !== id));
     }, 4000);
@@ -40,7 +45,6 @@ export default function DashboardGarant() {
   const [showProductOptionModal, setShowProductOptionModal] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [productImage, setProductImage] = useState(null);
-  const [productOption, setProductOption] = useState(null);
   const [productData, setProductData] = useState({
     IdProduit: null,
     nom: '',
@@ -66,7 +70,7 @@ export default function DashboardGarant() {
       } else {
         setEtablissement(null);
       }
-    } catch (error) {
+    } catch {
       notify("Impossible de charger les données de l'établissement.", "error");
     } finally {
       setLoading(false);
@@ -74,13 +78,14 @@ export default function DashboardGarant() {
   }, []);
 
   useEffect(() => {
+    // Le chargement asynchrone synchronise l’état avec l’API.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchDetails();
   }, [fetchDetails]);
 
   // ================= FILTRAGE CATÉGORIES =================
   const categoriesList = etablissement?.categories || [];
   
-  // Hna 9addina l-mochkil dyal logique: kan-7ewlo kolchi l-String bach y-t9arnou mzyan
   const displayedProducts = activeCategory === 'all' 
     ? etablissement?.produits 
     : etablissement?.produits?.filter(prod => String(prod.categorie_id) === String(activeCategory));
@@ -96,7 +101,7 @@ export default function DashboardGarant() {
       setEtablissement({ ...etablissement, ...editData });
       setShowEditModal(false);
       notify("L'établissement a été mis à jour.");
-    } catch (error) {
+    } catch {
       notify("Erreur lors de la mise à jour.", "error");
     }
   };
@@ -110,7 +115,7 @@ export default function DashboardGarant() {
       });
       setEtablissement(null);
       notify("Établissement supprimé.");
-    } catch (error) {
+    } catch {
       notify("Erreur de suppression.", "error");
     }
   };
@@ -154,7 +159,7 @@ export default function DashboardGarant() {
       }));
       setShowEditTableModal(false);
       notify("Table modifiée.");
-    } catch (error) {
+    } catch {
       notify("Erreur de modification.", "error");
     }
   };
@@ -169,7 +174,7 @@ export default function DashboardGarant() {
       });
       setEtablissement(prev => ({ ...prev, tables: prev.tables.filter(t => t.id !== tableId) }));
       notify("Table supprimée.");
-    } catch (error) {
+    } catch {
       notify("Erreur de suppression.", "error");
     }
   };
@@ -189,7 +194,7 @@ export default function DashboardGarant() {
       setShowAddImageModal(false);
       setNewImage({ file: null });
       notify("Image ajoutée à la galerie.");
-    } catch (error) {
+    } catch {
       notify("Erreur d'upload.", "error");
     }
   };
@@ -204,7 +209,7 @@ export default function DashboardGarant() {
       });
       setEtablissement(prev => ({ ...prev, images: prev.images.filter(img => img.id !== imageId) }));
       notify("Image retirée.");
-    } catch (error) {
+    } catch {
       notify("Erreur de suppression.", "error");
     }
   };
@@ -222,7 +227,7 @@ export default function DashboardGarant() {
         images: prev.images.map(img => ({ ...img, est_principale: img.id === imageId ? 1 : 0 }))
       }));
       notify("Couverture mise à jour.");
-    } catch (error) {
+    } catch {
       notify("Erreur de mise à jour.", "error");
     }
   };
@@ -249,7 +254,7 @@ export default function DashboardGarant() {
       if (String(activeCategory) === String(categorieId)) setActiveCategory('all');
       setEtablissement(prev => ({ ...prev, categories: prev.categories.filter(cat => cat.id !== categorieId) }));
       notify("Catégorie supprimée.");
-    } catch (error) {
+    } catch {
       notify("Erreur de suppression.", "error");
     }
   };
@@ -293,7 +298,7 @@ export default function DashboardGarant() {
       await axiosInstance.post('/DeletProduit', { IdEtablissement: etablissement.id, IdProduit: produitId });
       setEtablissement(prev => ({ ...prev, produits: prev.produits.filter(p => p.id !== produitId) }));
       notify("Produit supprimé.");
-    } catch (error) {
+    } catch {
       notify("Erreur de suppression.", "error");
     }
   };
@@ -318,7 +323,6 @@ export default function DashboardGarant() {
   ////////////////////////////
  const openProductOptoinModal = (produit) => {
     setSelectedProduct(produit);
-    setProductOption(null);
     setShowProductOptionModal(true);
   };
     const handleProductOptionSubmit = async (e) => {
@@ -332,17 +336,15 @@ export default function DashboardGarant() {
 
 
     try {
-      const response = await axiosInstance.post('/AddProduitOption', payload);
-      const option = response.data.produit_options;
+      await axiosInstance.post('/AddProduitOption', payload);
       
    
       
     fetchDetails();
       setShowProductOptionModal(false);
-      setProductOption(null);
       notify("Option ajoutée au produit.");
       
-    } catch (error) {
+    } catch {
       notify("Erreur d'upload.", "error");
     }
   };
@@ -355,7 +357,7 @@ export default function DashboardGarant() {
       fetchDetails();
       notify("Option supprimée.");
 
-    } catch (error) {
+    } catch {
       notify("Erreur de suppression.", "error");
     }
   };
@@ -391,7 +393,7 @@ export default function DashboardGarant() {
       setShowProductImageModal(false);
       setProductImage(null);
       notify("Image ajoutée au produit.");
-    } catch (error) {
+    } catch {
       notify("Erreur d'upload.", "error");
     }
   };
@@ -406,7 +408,7 @@ export default function DashboardGarant() {
       }));
       setSelectedProduct(prev => prev ? { ...prev, produit_images: prev.produit_images.filter(i => i.id !== imageId) } : prev);
       notify("Image supprimée.");
-    } catch (error) {
+    } catch {
       notify("Erreur de suppression.", "error");
     }
   };
@@ -422,7 +424,7 @@ export default function DashboardGarant() {
       }));
       setSelectedProduct(prev => prev ? { ...prev, produit_images: updateImages(prev.produit_images || []) } : prev);
       notify("Cover du produit mis à jour.");
-    } catch (error) {
+    } catch {
       notify("Erreur de mise à jour.", "error");
     }
   };
@@ -603,7 +605,6 @@ export default function DashboardGarant() {
                                   className="text-[11px] font-semibold text-gray-600 bg-gray-100 border border-gray-200 px-2 py-0.5 rounded-md flex items-center gap-1"
                                 >
                                   {option.nom_option}
-                                  {/* Ila kant l'option 3ndha taman zayd (supplément), t9der tbiyno hna */}
                                   {option.prix_supplementaire > 0 && (
                                     <span className="text-teal-600">(+{option.prix_supplementaire} DH)</span>
                                     

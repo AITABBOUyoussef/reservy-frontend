@@ -13,6 +13,7 @@ import DashboardGarant from "./pages/DashboardGarant";
 import DashboardAdmin from "./pages/DashboardAdmin";
 import AllEtablissment from "./pages/AllEtablissment";
 import MesReservations from "./pages/MesReservations";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 function App() {
  
@@ -25,13 +26,23 @@ function App() {
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword/>} />
       <Route path="/" element={<Dashboard/>}/>
-      <Route path="/MesReservations" element={<MesReservations/>}/>
+      <Route element={<ProtectedRoute roles={["client"]} />}>
+        <Route path="/MesReservations" element={<MesReservations/>}/>
+      </Route>
       <Route path="/allEtablissments" element={<AllEtablissment/>}/>
-      <Route path="/dashboardGarant" element={<DashboardGarant/>}/>
-      <Route path="/dashboardAdmin" element={<DashboardAdmin/>}/>
-      <Route path="/addEtablissment" element={<AddEtablissment/>}/>
+      <Route element={<ProtectedRoute roles={["gerant"]} />}>
+        <Route path="/dashboardGarant" element={<DashboardGarant/>}/>
+      </Route>
+      <Route element={<ProtectedRoute roles={["client", "gerant"]} />}>
+        <Route path="/addEtablissment" element={<AddEtablissment/>}/>
+      </Route>
+      <Route element={<ProtectedRoute roles={["admin"]} />}>
+        <Route path="/dashboardAdmin" element={<DashboardAdmin/>}/>
+      </Route>
+      <Route element={<ProtectedRoute />}>
+        <Route path="/profil" element={<Profil/>}/>
+      </Route>
       <Route path="/etablissment/:id" element={<Etablissment/>}/>
-      <Route path="/profil" element={<Profil/>}/>
 
     </Routes>
    </Router>

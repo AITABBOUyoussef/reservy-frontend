@@ -76,7 +76,6 @@ export default function DashboardAdmin() {
             </button>
           </div>
           
-          {/* Les boutons f t-téléphone wllaw hna (Scroll Horizontal) */}
           <div className="flex overflow-x-auto gap-2 px-4 pb-3 scrollbar-hide">
             <button 
               onClick={() => setActiveTab('attente')}
@@ -134,6 +133,8 @@ function DemandesEnAttente() {
   };
 
   useEffect(() => {
+    // Le chargement asynchrone synchronise l’état avec l’API.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchAttentes();
   }, []);
 

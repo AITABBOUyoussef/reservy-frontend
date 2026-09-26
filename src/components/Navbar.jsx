@@ -1,16 +1,14 @@
-import { useState, useEffect } from "react";
-import { Link, useNavigate, useLocation } from "react-router-dom";
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { getImageUrl } from "../utils/imageUrl";
 
 export default function Navbar() {
   const navigate = useNavigate();
-  const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const token = localStorage.getItem("token");
   const user = JSON.parse(localStorage.getItem("user") || "null");
   
-  // HNA T7ELL L-MOCHKIL DYAL LOGIC: Kanjbdo l-role mn localStorage kima drti f Login.jsx
   const storedRole = localStorage.getItem("role");
   const userRole = storedRole || user?.roles?.[0]?.name || 'visiteur'; 
 
@@ -21,16 +19,10 @@ export default function Navbar() {
     navigate("/login");
   };
 
-  // Kanseddo l-menu dyal téléphone fach kanbdlo l-page
-  useEffect(() => {
-    setIsMobileMenuOpen(false);
-  }, [location.pathname]);
-
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md shadow-sm border-b border-gray-100">
       <div className="max-w-7xl mx-auto px-4 h-20 flex items-center justify-between">
         
-        {/* LOGO W LOCALISATION */}
         <div className="flex items-center gap-4">
           <Link to="/" className="flex items-center gap-2">
             <span className="text-2xl font-black text-gray-900 tracking-tight">Reservy</span>
@@ -39,7 +31,6 @@ export default function Navbar() {
         </div>
 
 
-        {/* NAVIGATION DESKTOP */}
         <div className="hidden lg:flex items-center gap-6">
           <nav className="flex items-center gap-6">
             {(!token || userRole === 'client') && (
@@ -54,10 +45,15 @@ export default function Navbar() {
               </Link>
             )}
 
-            {/* ZT LIK HAD L-BOUTON DYAL GARANT HNA */}
             {(token && userRole === 'gerant') && (
               <Link to="/dashboardGarant" className="bg-teal-50 text-teal-700 px-4 py-2 rounded-full text-sm font-bold hover:bg-teal-100 transition-colors">
                 Gérer mon établissement
+              </Link>
+            )}
+
+            {(token && userRole === 'admin') && (
+              <Link to="/dashboardAdmin" className="bg-teal-50 text-teal-700 px-4 py-2 rounded-full text-sm font-bold hover:bg-teal-100 transition-colors">
+                Tableau de bord
               </Link>
             )}
           </nav>
@@ -96,7 +92,6 @@ export default function Navbar() {
           </div>
         </div>
 
-        {/* BOUTON MENU HAMBURGER (MOBILE) */}
         <div className="flex lg:hidden items-center gap-4">
           <button 
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} 
@@ -109,7 +104,6 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* MENU MOBILE (KAYBAN GHIR F T-TÉLÉPHONE) */}
       {isMobileMenuOpen && (
         <div className="lg:hidden absolute top-20 left-0 w-full bg-white border-b border-gray-200 shadow-lg px-4 py-6 flex flex-col gap-6">
           
@@ -124,21 +118,26 @@ export default function Navbar() {
 
           <nav className="flex flex-col gap-4">
             {(!token || userRole === 'client') && (
-              <Link to="/" className="text-base font-bold text-gray-800 flex items-center gap-3">
+              <Link to="/" onClick={() => setIsMobileMenuOpen(false)} className="text-base font-bold text-gray-800 flex items-center gap-3">
                 <span className="material-symbols-outlined text-gray-400">storefront</span> Établissements
               </Link>
             )}
 
             {(token && userRole === 'client') && (
-              <Link to="/MesReservations" className="text-base font-bold text-gray-800 flex items-center gap-3">
+              <Link to="/MesReservations" onClick={() => setIsMobileMenuOpen(false)} className="text-base font-bold text-gray-800 flex items-center gap-3">
                 <span className="material-symbols-outlined text-gray-400">event_seat</span> Mes Réservations
               </Link>
             )}
 
-            {/* ZT LIK HAD L-BOUTON TA F L-MENU DYAL T-TELEPHONE */}
             {(token && userRole === 'gerant') && (
-              <Link to="/dashboardGarant" className="text-base font-bold text-teal-700 flex items-center gap-3 bg-teal-50 p-3 rounded-xl">
+              <Link to="/dashboardGarant" onClick={() => setIsMobileMenuOpen(false)} className="text-base font-bold text-teal-700 flex items-center gap-3 bg-teal-50 p-3 rounded-xl">
                 <span className="material-symbols-outlined">manage_accounts</span> Gérer mon établissement
+              </Link>
+            )}
+
+            {(token && userRole === 'admin') && (
+              <Link to="/dashboardAdmin" onClick={() => setIsMobileMenuOpen(false)} className="text-base font-bold text-teal-700 flex items-center gap-3 bg-teal-50 p-3 rounded-xl">
+                <span className="material-symbols-outlined">admin_panel_settings</span> Tableau de bord
               </Link>
             )}
           </nav>
@@ -147,7 +146,7 @@ export default function Navbar() {
 
           {token ? (
             <div className="flex flex-col gap-4">
-              <Link to="/profil" className="flex items-center gap-4 bg-gray-50 p-3 rounded-xl border border-gray-100">
+              <Link to="/profil" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-4 bg-gray-50 p-3 rounded-xl border border-gray-100">
                 {user?.avatar ? (
                   <img src={getImageUrl(user.avatar)} alt="Avatar" className="w-12 h-12 rounded-full object-cover"/>
                 ) : (
@@ -161,7 +160,7 @@ export default function Navbar() {
                 </div>
               </Link>
 
-              <button onClick={handleLogout} className="flex items-center justify-center gap-2 bg-red-50 text-red-600 font-bold py-3 rounded-xl">
+              <button onClick={() => { setIsMobileMenuOpen(false); handleLogout(); }} className="flex items-center justify-center gap-2 bg-red-50 text-red-600 font-bold py-3 rounded-xl">
                 <span className="material-symbols-outlined">logout</span>
                 Se déconnecter
               </button>
