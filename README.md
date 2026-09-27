@@ -2,6 +2,12 @@
 
 Application web de Reservy, construite avec React et Vite. Elle fournit les interfaces client, gerant et administrateur et communique avec l'API Laravel du dossier `reservy-backend`.
 
+## Demo en ligne
+
+**[Ouvrir Reservy](https://reservy.me)**
+
+Les captures d'ecran generales du projet sont disponibles dans le [README principal](../README.md).
+
 ## Fonctionnalites
 
 - Inscription, connexion classique et connexion Google.
@@ -112,4 +118,3 @@ Avant une livraison, executez :
 npm run lint
 npm run build
 ```
-
