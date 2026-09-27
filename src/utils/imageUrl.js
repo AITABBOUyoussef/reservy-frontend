@@ -1,6 +1,7 @@
 const apiUrl = import.meta.env.VITE_API_URL;
 const imageBaseUrl = apiUrl.replace(/\/api\/?$/, '').replace(/\/$/, '');
 
+// Construit l’URL publique d’une image.
 export function getImageUrl(imageName) {
   if (!imageName) return '';
 

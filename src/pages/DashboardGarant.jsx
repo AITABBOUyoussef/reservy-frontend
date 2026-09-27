@@ -4,6 +4,7 @@ import axiosInstance from "../api/axios";
 import Navbar from "../components/Navbar";
 import { getImageUrl } from "../utils/imageUrl";
 
+// Affiche l’espace de gestion du gérant.
 export default function DashboardGarant() {
   const navigate = useNavigate();
   const [etablissement, setEtablissement] = useState(null);
@@ -12,6 +13,7 @@ export default function DashboardGarant() {
   // ================= NOTIFICATIONS =================
   const [notifications, setNotifications] = useState([]);
 
+  // Affiche une notification temporaire.
   const notify = (message, type = "success") => {
     const id = Date.now();
     setNotifications((prev) => {
@@ -65,6 +67,7 @@ export default function DashboardGarant() {
   const [activeCategory, setActiveCategory] = useState("all");
 
   // ================= FETCH DATA =================
+  // Charge les détails de l’établissement.
   const fetchDetails = useCallback(async () => {
     setLoading(true);
     try {
@@ -113,6 +116,7 @@ export default function DashboardGarant() {
     }
   };
 
+  // Supprime l’établissement géré.
   const supprimerEtablissement = async () => {
     if (!window.confirm("Supprimer cet établissement ? Action irréversible."))
       return;
@@ -128,6 +132,7 @@ export default function DashboardGarant() {
     }
   };
 
+  // Enregistre les informations de l’établissement.
   const handleSave = async (e) => {
     e.preventDefault();
     if (editType === "etablissement") handleEditSubmit();
@@ -152,6 +157,7 @@ export default function DashboardGarant() {
     }
   };
 
+  // Modifie les informations d’une table.
   const editTable = async (tableId) => {
     try {
       await axiosInstance.post("/EditTabl", {
@@ -174,6 +180,7 @@ export default function DashboardGarant() {
     }
   };
 
+  // Supprime une table de l’établissement.
   const supprimerTable = async (tableId) => {
     if (!window.confirm("Retirer cette table ?")) return;
     try {
@@ -215,6 +222,7 @@ export default function DashboardGarant() {
     }
   };
 
+  // Supprime une image de l’établissement.
   const supprimerImage = async (imageId) => {
     if (!window.confirm("Supprimer cette image ?")) return;
     try {
@@ -233,6 +241,7 @@ export default function DashboardGarant() {
     }
   };
 
+  // Définit l’image principale de l’établissement.
   const setMainImage = async (imageId) => {
     if (!window.confirm("Définir comme couverture ?")) return;
     try {
@@ -272,6 +281,7 @@ export default function DashboardGarant() {
     }
   };
 
+  // Supprime une catégorie de produits.
   const supprimerCategorie = async (categorieId) => {
     if (!window.confirm("Supprimer cette catégorie ?")) return;
     try {
@@ -328,6 +338,7 @@ export default function DashboardGarant() {
     }
   };
 
+  // Supprime un produit.
   const supprimerProduit = async (produitId) => {
     if (!window.confirm("Supprimer ce produit ?")) return;
     try {
@@ -345,6 +356,7 @@ export default function DashboardGarant() {
     }
   };
 
+  // Ouvre la fenêtre d’édition d’un produit.
   const openProductModal = (produit = null) => {
     setProductData(
       produit
@@ -374,6 +386,7 @@ export default function DashboardGarant() {
     setSelectedProduct(produit);
     setShowProductOptionModal(true);
   };
+  // Enregistre une option de produit.
   const handleProductOptionSubmit = async (e) => {
     e.preventDefault();
     if (!productOptionData) return notify("Sélectionnez une Produit.", "error");
@@ -394,6 +407,7 @@ export default function DashboardGarant() {
     }
   };
 
+  // Supprime une option de produit.
   const supprimerOption = async (produit, optionId) => {
     if (!window.confirm("Supprimer cette Option ?")) return;
     try {
@@ -415,6 +429,7 @@ export default function DashboardGarant() {
     setShowProductImageModal(true);
   };
 
+  // Ajoute une image au produit.
   const handleProductImageSubmit = async (e) => {
     e.preventDefault();
     if (!productImage) return notify("Sélectionnez une image.", "error");
@@ -461,6 +476,7 @@ export default function DashboardGarant() {
     }
   };
 
+  // Supprime une image du produit.
   const supprimerImageProduit = async (produit, imageId) => {
     if (!window.confirm("Supprimer cette image ?")) return;
     try {
@@ -497,12 +513,14 @@ export default function DashboardGarant() {
     }
   };
 
+  // Définit l’image principale du produit.
   const setMainImageProduit = async (produit, imageId) => {
     try {
       await axiosInstance.post("/EditProduitImage", {
         IdProduit: produit.id,
         IdImage: imageId,
       });
+      // Met à jour la liste des images.
       const updateImages = (images) =>
         images.map((i) => ({ ...i, est_principale: i.id === imageId ? 1 : 0 }));
 

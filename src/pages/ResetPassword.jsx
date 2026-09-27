@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import axiosInstance from "../api/axios";
 import AuthShell from "../components/AuthShell";
 
+// Affiche le formulaire de nouveau mot de passe.
 export default function ResetPassword() {
   const [searchParams] = useSearchParams();
   const email = searchParams.get("email");
@@ -15,6 +16,7 @@ export default function ResetPassword() {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
+  // Traite la soumission du formulaire.
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErrorMessage("");

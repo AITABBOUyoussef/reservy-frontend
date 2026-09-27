@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import axiosInstance from "../api/axios";
 import Navbar from "../components/Navbar";
 
+// Affiche le formulaire d’ajout d’un établissement.
 export default function AddEtablissment() {
   const [nom, setNom] = useState("");
   const [description, setDescription] = useState("");
@@ -15,6 +16,7 @@ export default function AddEtablissment() {
 
   const navigate = useNavigate();
 
+  // Envoie le formulaire de création de l’établissement.
   const handleAdd = async (e) => {
     e.preventDefault();
     setErrorMessage("");

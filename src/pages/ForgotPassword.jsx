@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import axiosInstance from "../api/axios";
 import AuthShell from "../components/AuthShell";
 
+// Affiche le formulaire de récupération du mot de passe.
 export default function ForgotPassword() {
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
@@ -10,6 +11,7 @@ export default function ForgotPassword() {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
+  // Traite la soumission du formulaire.
   const handleSubmit = async (e) => {
     e.preventDefault();
     setMessage("");

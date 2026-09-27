@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 
+// Affiche la mise en page commune des écrans d’authentification.
 export default function AuthShell({ title, subtitle, children }) {
   return (
     <div className="min-h-screen bg-slate-50 px-4 py-8 sm:px-6 lg:px-8">

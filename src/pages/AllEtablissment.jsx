@@ -3,12 +3,14 @@ import axiosInstance from "../api/axios";
 import { useNavigate } from "react-router-dom";
 import { getImageUrl } from "../utils/imageUrl";
 
+// Affiche la liste des établissements disponibles.
 export default function AllEtablissment() {
   const [etablissements, setEtablissements] = useState([]);
   const [loading, setLoading] = useState(true);
   const [deleteLoading, setDeleteLoading] = useState(null);
 
   const navigate = useNavigate();
+  // Charge les établissements depuis l’API.
   const fetchEtablissements = async () => {
     try {
       const response = await axiosInstance.get("/AllEtablissement");
@@ -28,10 +30,12 @@ export default function AllEtablissment() {
     fetchEtablissements();
   }, []);
 
+  // Navigue vers la fiche de l’établissement sélectionné.
   const handNav = (id) => {
     navigate(`/etablissment/${id}`);
   };
 
+  // Supprime l’établissement sélectionné.
   const handleDelete = async (id, e) => {
     e.stopPropagation();
 

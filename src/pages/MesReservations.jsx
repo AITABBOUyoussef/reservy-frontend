@@ -2,11 +2,13 @@ import { useEffect, useState } from "react";
 import axiosInstance from "../api/axios";
 import { getImageUrl } from "../utils/imageUrl";
 
+// Formate un prix pour l’affichage.
 const formatPrice = (price) =>
   `${Number(price || 0)
     .toFixed(2)
     .replace(".", ",")} DH`;
 
+// Formate une date pour l’affichage.
 const formatDate = (date) => {
   if (!date) return "Date indisponible";
 
@@ -19,6 +21,7 @@ const formatDate = (date) => {
   }).format(parsedDate);
 };
 
+// Affiche l’état vide des réservations.
 function EmptyReservations() {
   return (
     <div className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-gray-200 bg-white px-6 py-16 text-center shadow-sm">
@@ -36,6 +39,7 @@ function EmptyReservations() {
   );
 }
 
+// Affiche une réservation dans la liste.
 function ReservationCard({ commande }) {
   const isDineIn = commande.type_commande === "sur_place";
   const articles = Array.isArray(commande.articles) ? commande.articles : [];
@@ -166,12 +170,14 @@ function ReservationCard({ commande }) {
   );
 }
 
+// Affiche les réservations de l’utilisateur.
 export default function MesReservations() {
   const [commandes, setCommandes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
+    // Charge les réservations de l’utilisateur.
     const fetchCommandes = async () => {
       try {
         const response = await axiosInstance.get("/Mescommandes");

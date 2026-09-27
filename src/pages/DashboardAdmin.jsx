@@ -5,10 +5,12 @@ import { useEffect } from "react";
 import AllEtablissment from "./AllEtablissment";
 import AddEtablissment from "./AddEtablissment";
 
+// Affiche le tableau de bord administrateur.
 export default function DashboardAdmin() {
   const [activeTab, setActiveTab] = useState("attente");
   const navigate = useNavigate();
 
+  // Déconnecte l’utilisateur et revient à la connexion.
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
@@ -135,6 +137,7 @@ function DemandesEnAttente() {
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(null);
 
+  // Charge les demandes en attente depuis l’API.
   const fetchAttentes = async () => {
     try {
       const response = await axiosInstance.get("/EtablissementAttente");
@@ -154,6 +157,7 @@ function DemandesEnAttente() {
     fetchAttentes();
   }, []);
 
+  // Traite l’action administrative sur une demande.
   const handleAction = async (id, gerant_id, statutAction) => {
     setActionLoading(id);
     try {

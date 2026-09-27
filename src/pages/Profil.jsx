@@ -2,6 +2,7 @@ import { useState } from "react";
 import axiosInstance from "../api/axios";
 import { getImageUrl } from "../utils/imageUrl";
 
+// Affiche et permet de modifier le profil.
 export default function Profil() {
   const user = JSON.parse(localStorage.getItem("user"));
   const [name, setName] = useState(user.name);
@@ -16,6 +17,7 @@ export default function Profil() {
   const [errorMessage, setErrorMessage] = useState("");
   // const navigate = useNavigate();
 
+  // Prépare le nouvel avatar à envoyer.
   const handleAvatarChange = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -23,6 +25,7 @@ export default function Profil() {
       setPreviewAvatar(URL.createObjectURL(file));
     }
   };
+  // Enregistre les modifications du profil.
   const editProfil = async (e) => {
     e.preventDefault();
     setErrorMessage("");

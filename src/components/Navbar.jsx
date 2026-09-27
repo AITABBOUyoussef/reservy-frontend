@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { getImageUrl } from "../utils/imageUrl";
 
+// Affiche la navigation et les actions du compte.
 export default function Navbar() {
   const navigate = useNavigate();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -12,6 +13,7 @@ export default function Navbar() {
   const storedRole = localStorage.getItem("role");
   const userRole = storedRole || user?.roles?.[0]?.name || "visiteur";
 
+  // Déconnecte l’utilisateur et revient à la connexion.
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");

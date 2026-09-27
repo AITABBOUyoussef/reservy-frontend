@@ -15,6 +15,7 @@ import AllEtablissment from "./pages/AllEtablissment";
 import MesReservations from "./pages/MesReservations";
 import ProtectedRoute from "./components/ProtectedRoute";
 
+// Configure les routes principales de l’application.
 function App() {
   return (
     <Router>

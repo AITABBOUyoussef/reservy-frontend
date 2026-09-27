@@ -5,11 +5,13 @@ import Navbar from "../components/Navbar";
 import { getImageUrl } from "../utils/imageUrl";
 
 // Icons SVG
+// Affiche l’icône d’étoile.
 const StarIcon = () => (
   <svg className="w-4 h-4 text-amber-400 fill-amber-400" viewBox="0 0 20 20">
     <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
   </svg>
 );
+// Affiche l’icône de localisation.
 const LocationIcon = () => (
   <svg
     className="w-4 h-4 shrink-0"
@@ -31,6 +33,7 @@ const LocationIcon = () => (
     />
   </svg>
 );
+// Affiche l’icône de téléphone.
 const PhoneIcon = () => (
   <svg
     className="w-4 h-4 shrink-0"
@@ -46,6 +49,7 @@ const PhoneIcon = () => (
     />
   </svg>
 );
+// Affiche l’icône de suppression.
 const TrashIcon = () => (
   <svg
     className="w-4 h-4 text-gray-400 hover:text-red-500 transition-colors"
@@ -62,6 +66,7 @@ const TrashIcon = () => (
   </svg>
 );
 
+// Affiche la fiche détaillée d’un établissement.
 export default function Etablissment() {
   const { id } = useParams();
   const [etablissement, setEtablissement] = useState(null);
@@ -72,6 +77,7 @@ export default function Etablissment() {
   const [cart, setCart] = useState([]);
   const [cartTabl, setCartTabl] = useState([]);
 
+  // Trie les images en plaçant la principale en tête.
   const sortImages = (imagesArray) => {
     if (!imagesArray || imagesArray.length === 0) return [];
     const mainImg = imagesArray.find((img) => img.est_principale);
@@ -80,6 +86,7 @@ export default function Etablissment() {
   };
 
   useEffect(() => {
+    // Charge les détails de l’établissement.
     const fetchDetails = async () => {
       try {
         const response = await axiosInstance.post("/GetEtablissementDet", {
@@ -97,6 +104,7 @@ export default function Etablissment() {
     if (id) fetchDetails();
   }, [id]);
 
+  // Ajoute un produit au panier.
   const addToCart = (produit) => {
     setCart((prev) => {
       const existsProduit = prev.find((item) => item.id === produit.id);
@@ -110,6 +118,7 @@ export default function Etablissment() {
     });
   };
 
+  // Ajoute une table au panier.
   const addTablToCart = (tabl) => {
     setCartTabl((prev) => {
       const existsTabl = prev.find((item) => item.id === tabl.id);
@@ -138,6 +147,7 @@ export default function Etablissment() {
     });
   };
 
+  // Met à jour les détails d’une réservation de table.
   const updateTableReservation = (tableId, field, value) => {
     setCartTabl((prev) =>
       prev.map((table) => {
@@ -150,6 +160,7 @@ export default function Etablissment() {
     );
   };
 
+  // Met à jour la capacité d’une table.
   const updateCapacite = (tablId, amount) => {
     setCartTabl((prev) =>
       prev.map((item) => {
@@ -164,6 +175,7 @@ export default function Etablissment() {
     );
   };
 
+  // Met à jour la quantité d’un produit.
   const updateQuantity = (productId, amount) => {
     setCart((prev) =>
       prev
@@ -178,8 +190,10 @@ export default function Etablissment() {
     );
   };
 
+  // Retire un produit du panier.
   const removeFromCart = (productId) =>
     setCart((prev) => prev.filter((item) => item.id !== productId));
+  // Retire une table du panier.
   const removeTablFromCart = (tableId) =>
     setCartTabl((prev) => prev.filter((item) => item.id !== tableId));
 
@@ -196,6 +210,7 @@ export default function Etablissment() {
   const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
   const currentTime = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
 
+  // Envoie la commande et les réservations.
   const passerCommande = async () => {
     if (cartTabl.length === 1) {
       const table = cartTabl[0];

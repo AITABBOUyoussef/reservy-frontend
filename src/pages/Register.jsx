@@ -5,6 +5,7 @@ import { useGoogleLogin } from "@react-oauth/google";
 
 const googleLoginAvailable = Boolean(import.meta.env.VITE_GOOGLE_CLIENT_ID);
 
+// Affiche le formulaire d’inscription.
 export default function Register() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -13,6 +14,7 @@ export default function Register() {
   const [errorMessage, setErrorMessage] = useState("");
   const navigate = useNavigate();
 
+  // Envoie les données d’inscription.
   const handleRegister = async (e) => {
     e.preventDefault();
     setErrorMessage("");

@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import axiosInstance from "../api/axios";
 import { getImageUrl } from "../utils/imageUrl";
 
+// Affiche le tableau de bord des établissements.
 export default function Dashboard() {
   const [etablissements, setEtablissements] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -12,14 +13,17 @@ export default function Dashboard() {
 
   const token = localStorage.getItem("token") || null;
 
+  // Navigue vers la fiche de l’établissement sélectionné.
   const handNav = (id) => navigate(`/etablissment/${id}`);
 
+  // Navigue vers l’espace de gestion du gérant.
   const handGarant = () => {
     if (!token) return navigate("/login");
     navigate("/addEtablissment");
   };
 
   useEffect(() => {
+    // Charge les établissements depuis l’API.
     const fetchEtablissements = async () => {
       try {
         const response = await axiosInstance.get("/GetEtablissement");
@@ -47,43 +51,7 @@ export default function Dashboard() {
               Commandez vos plats préférés ou réservez votre table
             </h1>
 
-            {/* Mode Switcher */}
-            <div className="bg-gray-100 p-1.5 rounded-full flex gap-1 w-full max-w-sm">
-              <button
-                onClick={() => setMode("delivery")}
-                className={`flex-1 flex justify-center items-center gap-2 py-2.5 px-4 rounded-full text-sm font-bold transition-all ${mode === "delivery" ? "bg-amber-400 text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-800"}`}
-              >
-                <span className="material-symbols-outlined text-[20px]">
-                  moped
-                </span>{" "}
-                Livraison
-              </button>
-              <button
-                onClick={() => setMode("reserve")}
-                className={`flex-1 flex justify-center items-center gap-2 py-2.5 px-4 rounded-full text-sm font-bold transition-all ${mode === "reserve" ? "bg-teal-700 text-white shadow-sm" : "text-gray-500 hover:text-gray-800"}`}
-              >
-                <span className="material-symbols-outlined text-[20px]">
-                  table_restaurant
-                </span>{" "}
-                Réservation
-              </button>
-            </div>
-
-            {/* Search Bar */}
-            <div className="w-full max-w-2xl flex items-center bg-gray-50 rounded-full px-5 py-3.5 border border-gray-200 focus-within:border-teal-500 focus-within:bg-white focus-within:shadow-sm transition-all">
-              <span className="material-symbols-outlined text-gray-400 mr-3 text-2xl">
-                search
-              </span>
-              <input
-                className="w-full bg-transparent outline-none text-base font-medium placeholder-gray-400"
-                type="text"
-                placeholder={
-                  mode === "delivery"
-                    ? "Adresse de livraison, plat..."
-                    : "Nom du restaurant, ville..."
-                }
-              />
-            </div>
+          
           </div>
         </section>
 

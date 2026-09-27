@@ -5,12 +5,14 @@ import { useGoogleLogin } from "@react-oauth/google";
 
 const googleLoginAvailable = Boolean(import.meta.env.VITE_GOOGLE_CLIENT_ID);
 
+// Affiche le formulaire de connexion.
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const navigate = useNavigate();
 
+  // Envoie les identifiants de connexion.
   const handleLogin = async (e) => {
     e.preventDefault();
     setErrorMessage("");
