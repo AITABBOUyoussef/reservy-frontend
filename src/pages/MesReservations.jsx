@@ -3,7 +3,9 @@ import axiosInstance from "../api/axios";
 import { getImageUrl } from "../utils/imageUrl";
 
 const formatPrice = (price) =>
-  `${Number(price || 0).toFixed(2).replace(".", ",")} DH`;
+  `${Number(price || 0)
+    .toFixed(2)
+    .replace(".", ",")} DH`;
 
 const formatDate = (date) => {
   if (!date) return "Date indisponible";
@@ -99,7 +101,9 @@ function ReservationCard({ commande }) {
       <div className="space-y-3 p-5 sm:p-6">
         <div className="flex items-center justify-between text-xs font-black uppercase tracking-wider text-gray-400">
           <span>Articles</span>
-          <span>{articles.length} article{articles.length === 1 ? "" : "s"}</span>
+          <span>
+            {articles.length} article{articles.length === 1 ? "" : "s"}
+          </span>
         </div>
 
         <div className="divide-y divide-gray-100 rounded-2xl bg-gray-50 px-4">
@@ -123,20 +127,20 @@ function ReservationCard({ commande }) {
                   </div>
                 )}
                 <div className="min-w-0">
-                <p className="truncate text-sm font-bold text-gray-800">
-                  <span className="mr-2 text-teal-700">
-                    {article.quantite}×
-                  </span>
-                  {article.nom}
-                </p>
-                {article.created_at && (
-                  <p className="mt-1 flex items-center gap-1 text-xs font-medium text-gray-400">
-                    <span className="material-symbols-outlined text-sm">
-                      schedule
+                  <p className="truncate text-sm font-bold text-gray-800">
+                    <span className="mr-2 text-teal-700">
+                      {article.quantite}×
                     </span>
-                    {formatDate(article.created_at)}
+                    {article.nom}
                   </p>
-                )}
+                  {article.created_at && (
+                    <p className="mt-1 flex items-center gap-1 text-xs font-medium text-gray-400">
+                      <span className="material-symbols-outlined text-sm">
+                        schedule
+                      </span>
+                      {formatDate(article.created_at)}
+                    </p>
+                  )}
                 </div>
                 {article.instructions_speciales && (
                   <p className="mt-1 text-xs font-medium text-gray-500">
@@ -174,13 +178,13 @@ export default function MesReservations() {
         setCommandes(
           Array.isArray(response.data?.MesCommande)
             ? response.data.MesCommande
-            : []
+            : [],
         );
       } catch (error) {
         console.error("Erreur de récupération des réservations :", error);
         setErrorMessage(
           error.response?.data?.message ||
-            "Impossible de charger vos réservations. Veuillez réessayer."
+            "Impossible de charger vos réservations. Veuillez réessayer.",
         );
       } finally {
         setLoading(false);
@@ -241,10 +245,7 @@ export default function MesReservations() {
         {!loading && !errorMessage && commandes.length > 0 && (
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
             {commandes.map((commande) => (
-              <ReservationCard
-                key={commande.id_commande}
-                commande={commande}
-              />
+              <ReservationCard key={commande.id_commande} commande={commande} />
             ))}
           </div>
         )}
